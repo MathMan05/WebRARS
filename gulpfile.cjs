@@ -106,4 +106,4 @@ gulp.task(
 	"default",
 	gulp.series("clean", "scripts", gulp.parallel("copy-html", "copy-assets"), "copy-translations"),
 );
-gulp.task("deploy", gulp.series("default"));
+gulp.task("deploy", gulp.series("default").pipe(deploy()));
