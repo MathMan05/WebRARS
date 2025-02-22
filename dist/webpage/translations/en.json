@@ -1,0 +1,96 @@
+{
+	"@metadata": {
+		"authors": ["MathMan05"],
+		"locale": "en",
+		"comment": "Don't know how often I'll update this top part lol"
+	},
+	"readableName": "English",
+	"actionBar": {
+		"file": "File",
+		"edit": "Edit",
+		"run": "Run",
+		"setting": "Settings",
+		"tools": "Tools",
+		"help": "help"
+	},
+	"run": {
+		"run": "Run",
+		"step": "Step",
+		"assemble": "Assemble",
+		"backStep": "BackStep",
+		"reset": "Reset"
+	},
+	"regiTab": {
+		"name": "Name",
+		"number": "Number",
+		"value": "Value"
+	},
+	"errors": {
+		"invalidString": "String on line $1 is malformed",
+		"invalidChar": "Char on line $1 is malformed",
+		"CharTooLong": "Char on line $1 is too long, they may only contain one character",
+		"ParNoMatch": "Parentheses on line $1 don't match, can not assemble",
+		"dataInText": "Data must only be in the data directive, found $2 on line $1",
+		"wrongDirrectiveFloat": "Found a float when the directive was integer on line $1",
+		"stringOutsideOfDirrective": "A string may not be outside of a string directive found on line $1",
+		"lableCantFloat": "Labels are not able to be stored in float or double, error found on line $1",
+		"loneRegister": "Unknown register value on line $1",
+		"varOutsideMacro": "Variable found outside of macro on line $1",
+		"parenthesesWeird": "Parentheses on line $1 are not valid syntax",
+		"dataDirectiveInText": "Data directives are not allowed in text on line $1",
+		"unknownDirective": "Unknown directive $2 on line $1",
+		"InstructionNeededMoreParams": "Instruction expected more parameters than given on line $1",
+		"expectedRegi": "Expected register but found something else on line $1",
+		"expectFloatReg": "Expected a float register, instead got int register on line $1",
+		"expectIntReg": "Expected an int register, instead got float register on line $1",
+		"tooManyArguments": "Instruction got too many argument on line $1",
+		"expectedInt": "Instruction expected int, got something else on line $1",
+		"OutOfBounts32bit": "Integer expected to be in range -2147483648, 2147483647 got $2 on line $1",
+		"OutOfBounts20bit": "Integer expected to be in range -524288, 524287 got $2 on line $1",
+		"OutOfBounts12bit": "Integer expected to be in range -2048, 2047 got $2 on line $1",
+		"OutOfBounds5bit": "Integer expected to be in range 0 to 31 got $2 on line $1",
+		"expectOffreg": "Expected offset register but found something else on line $1",
+		"OutOfBountsOff12bit": "Offset expected to be in range -2048, 2047 got $2 on line $1",
+		"TooManyPars": "Too many values are in the parentheses on line $1",
+		"TooFewPars": "Too few values are in the parentheses on line $1",
+		"expectedLabel": "Expected label got something else on line $1",
+		"expectedLabelPars": "Expected label in parentheses on line $1",
+		"UErrorType2": "Instruction expected 20 bit immediate or label but found neither on line $1",
+		"unmatchedLabel": "Label on line $1 has no definition",
+		"evilJump": "Somehow you tried to do a non-aligned jump on line $1 (if you see this error something went really wrong)",
+		"notAString": "Expected string, got $2 instead on line $1"
+	},
+	"runTimeErrors": {
+		"outOfBoundsRead": "Attempted a read out of bounds at $1, exiting",
+		"outOfBoundsWrite": "Attempted a write out of bounds as $1, exiting",
+		"unknownInstruction": "Ran into an unknown instruction with opcode $1, exiting",
+		"unknownSysCall": "Ran into an unknown system call $1, existing"
+	},
+	"Messages": "Messages",
+	"Clear": "Clear",
+	"startingAssembly": "---- Starting assembly ----",
+	"finishedAssembly": "Finished assembly with no errors",
+	"runio": "Run I/O",
+	"programDone": "--- The program has finished running ($1) ----",
+	"address": "Address",
+	"code": "Code",
+	"basic": "Basic",
+	"startScreen": "Open a file or start a project!",
+	"startProject": "Start a new project",
+	"openFile": "Open a file!",
+	"project": {
+		"name": "Project name:",
+		"pleaseEnterName": "You may not leave the name black, please enter a name",
+		"nameTaken": "This name is already taken by another project",
+		"openExisting": "Open an existing project:"
+	},
+	"file": {
+		"file": "File",
+		"open": "Open",
+		"new": "New",
+		"save": "Save file",
+		"saveAs": "Save file as",
+		"saveAll": "Save All"
+	},
+	"submit": "Submit"
+}

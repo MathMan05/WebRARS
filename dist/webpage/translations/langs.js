@@ -1,0 +1,1 @@
+const langs={"en.json":"English"};export{langs}

@@ -1,0 +1,2 @@
+const registerNames=await (await fetch("./assembler/registerNames.json")).json();const instructions=await (await fetch("./assembler/instructions.json")).json();export{registerNames,instructions};
+//# sourceMappingURL=fetches.js.map
