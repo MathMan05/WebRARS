@@ -1,0 +1,319 @@
+[
+	{
+		"name": "li",
+		"type": "reallyfake"
+	},
+	{
+		"name": "la",
+		"type": "reallyfake"
+	},
+	{
+		"name": "ld",
+		"type": "I",
+		"args": ["reg", "offreg"],
+		"funct3": 3,
+		"opcode": 3
+	},
+	{
+		"name": "lw",
+		"type": "I",
+		"args": ["reg", "offreg"],
+		"funct3": 2,
+		"opcode": 3
+	},
+	{
+		"name": "ecall",
+		"type": "W",
+		"args": [],
+		"code": 115
+	},
+	{
+		"name": "addi",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 0
+	},
+	{
+		"name": "xori",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 4
+	},
+	{
+		"name": "ori",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 6
+	},
+	{
+		"name": "andi",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 7
+	},
+	{
+		"name": "slli",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 1,
+		"pimm": 0
+	},
+	{
+		"name": "srli",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 5,
+		"pimm": 0
+	},
+	{
+		"name": "srai",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 5,
+		"pimm": 32
+	},
+	{
+		"name": "slti",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 2
+	},
+	{
+		"name": "sltiu",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 19,
+		"funct3": 3
+	},
+	{
+		"name": "beq",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 0
+	},
+	{
+		"name": "bne",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 1
+	},
+	{
+		"name": "blt",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 4
+	},
+	{
+		"name": "bge",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 5
+	},
+	{
+		"name": "bltu",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 6
+	},
+	{
+		"name": "bgeu",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 7
+	},
+	{
+		"name": "auipc",
+		"type": "U",
+		"opcode": 23,
+		"args": ["reg", "label"]
+	},
+	{
+		"name": "add",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 0,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "sub",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 0,
+		"funct7": 32,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "sll",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 1,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "slt",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 2,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "sltu",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 3,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "xor",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 4,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "srl",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 5,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "srl",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 5,
+		"funct7": 32,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "or",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 6,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "and",
+		"type": "R",
+		"opcode": 51,
+		"funct3": 7,
+		"funct7": 0,
+		"args": ["reg", "reg", "reg"]
+	},
+	{
+		"name": "sb",
+		"type": "S",
+		"opcode": 35,
+		"funct3": 0,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "sh",
+		"type": "S",
+		"opcode": 35,
+		"funct3": 1,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "sw",
+		"type": "S",
+		"opcode": 35,
+		"funct3": 2,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "sd",
+		"type": "S",
+		"opcode": 35,
+		"funct3": 3,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "lb",
+		"type": "I",
+		"opcode": 3,
+		"funct3": 0,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "lh",
+		"type": "I",
+		"opcode": 3,
+		"funct3": 1,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "lw",
+		"type": "I",
+		"opcode": 3,
+		"funct3": 2,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "lbu",
+		"type": "I",
+		"opcode": 3,
+		"funct3": 4,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "lhu",
+		"type": "I",
+		"opcode": 3,
+		"funct3": 5,
+		"args": ["reg", "offreg"]
+	},
+	{
+		"name": "noop",
+		"type": "fake",
+		"args": [],
+		"replace": "addi 0x 0x 0"
+	},
+	{
+		"name": "beq",
+		"type": "B",
+		"args": ["reg", "reg", "label"],
+		"opcode": 99,
+		"funct3": 0
+	},
+	{
+		"name": "jal",
+		"type": "J",
+		"args": ["offreg"],
+		"opcode": 111
+	},
+	{
+		"name": "jalr",
+		"type": "I",
+		"args": ["reg", "offreg"],
+		"opcode": 103,
+		"funct3": 0
+	},
+	{
+		"name": "lui",
+		"type": "U",
+		"args": ["reg", "20bit"],
+		"opcode": 55
+	}
+]
