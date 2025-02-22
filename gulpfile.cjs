@@ -1,11 +1,6 @@
 const gulp = require("gulp");
-const deploy = require("gulp-gh-pages");
-const ts = require("gulp-typescript");
-const tsProject = ts.createProject("tsconfig.json");
-const argv = require("yargs").argv;
 const rimraf = require("rimraf");
 const plumber = require("gulp-plumber");
-const sourcemaps = require("gulp-sourcemaps");
 const fs = require("fs");
 const {swcDir} = require("@swc/cli");
 
@@ -106,6 +101,3 @@ gulp.task(
 	"default",
 	gulp.series("clean", "scripts", gulp.parallel("copy-html", "copy-assets"), "copy-translations"),
 );
-gulp.task("deploy", () => {
-	return gulp.src("./dist/**/*").pipe(deploy());
-});
