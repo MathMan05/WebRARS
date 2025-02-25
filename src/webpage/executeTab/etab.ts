@@ -62,7 +62,7 @@ class Etab {
 			this.sys = back.unCompact();
 		}
 		elm = this.htmlMap.get(this.sys?.pc as number);
-		if (elm) {
+		if (elm && this.sys && !this.sys.done) {
 			elm.classList.add("running");
 		}
 		this.changeButtonStates();
@@ -81,7 +81,7 @@ class Etab {
 
 		this.sys = this.csys.unCompact();
 		elm = this.htmlMap.get(this.sys.pc);
-		if (elm) {
+		if (elm && !this.sys.done) {
 			elm.classList.add("running");
 		}
 		this.csysQue = new Array(1000);
@@ -196,7 +196,7 @@ class Etab {
 				}
 				this.updateRegis();
 				elm = this.htmlMap.get(sys.pc);
-				if (elm) {
+				if (elm && !sys.done) {
 					elm.classList.add("running");
 				}
 				res();
@@ -226,7 +226,7 @@ class Etab {
 					}
 				}
 				elm = this.htmlMap.get(this.sys.pc);
-				if (elm) {
+				if (elm && !sys.done) {
 					elm.classList.add("running");
 				}
 				this.updateRegis();
@@ -265,7 +265,7 @@ class Etab {
 			for (let i = 0x00400000; (val = this.sys.ram.getInt32(i)) !== 0; i += 4) {
 				const tr = document.createElement("tr");
 				this.htmlMap.set(i, tr);
-				if (i === this.sys.pc) {
+				if (i === this.sys.pc && !this.sys.done) {
 					tr.classList.add("running");
 				}
 				const address = document.createElement("td");
