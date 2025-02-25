@@ -121,7 +121,7 @@ newFile.onclick = () => {
 	system.disable();
 	const editor = new Editor("", `riscv${editors.length + 1}.asm`, cons, curProject?.dir);
 	if (curProject) {
-		editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+		Editor.editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
 		editor.fileDir = `${curProject.name}:/${editor.fileName}`;
 	}
 	editors.push(editor);
@@ -142,8 +142,6 @@ executeButton.onclick = () => {
 	executeArea();
 };
 let system = new Etab();
-
-const editMap = new Map<string, Editor>();
 
 const buttons = new Map<Editor, HTMLButtonElement>();
 const saved = new Map<Editor, boolean>();
@@ -191,7 +189,7 @@ async function editArea() {
 					buttons.delete(editor);
 					editors = editors.filter((_) => _ != editor);
 					if (editor.fileDir) {
-						editMap.delete(editor.fileDir);
+						Editor.editMap.delete(editor.fileDir);
 					}
 					if (editor == focusedEditor) {
 						focusedEditor = editors[0];
@@ -225,11 +223,11 @@ async function editArea() {
 						}
 					} else {
 						if (!curProject) throw new Error("wow, something really broke, not sure what");
-						let editor = editMap.get(e.sys.file);
+						let editor = Editor.editMap.get(e.sys.file);
 						if (!editor) {
 							const file = await curProject.getFile(e.sys.file);
 							editor = new Editor(await file.text(), file.name, cons, curProject?.dir);
-							editMap.set(e.sys.file, editor);
+							Editor.editMap.set(e.sys.file, editor);
 							editor.fileDir = e.sys.file;
 							editors.push(editor);
 						}
@@ -358,7 +356,7 @@ function openNewFile() {
 			for (const file of Array.from(input.files)) {
 				const editor = new Editor(await file.text(), file.name, cons, curProject?.dir);
 				if (curProject) {
-					editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+					Editor.editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
 					editor.fileDir = `${curProject.name}:/${editor.fileName}`;
 				}
 				newEditor ||= editor;
@@ -393,7 +391,7 @@ async function openProject(proj: Project) {
 	curProject = proj;
 	projFile = new ProjFiles(proj);
 	projFile.addEventListener("open", async (e) => {
-		const editor = editMap.get(`${proj.name}:${e.fileName}`);
+		const editor = Editor.editMap.get(`${proj.name}:${e.fileName}`);
 		if (editor) {
 			const button = buttons.get(editor);
 			if (button) {
@@ -409,13 +407,13 @@ async function openProject(proj: Project) {
 		);
 		editors.push(newEditor);
 		focusedEditor = newEditor;
-		editMap.set(`${proj.name}:/${newEditor.fileName}`, newEditor);
+		Editor.editMap.set(`${proj.name}:/${newEditor.fileName}`, newEditor);
 		newEditor.fileDir = `${proj.name}:/${newEditor.fileName}`;
 		await editArea();
 	});
 	for await (const thing of proj.getAsm()) {
 		const editor = new Editor(await thing[1].text(), thing[0], cons, curProject?.dir);
-		editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+		Editor.editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
 		editor.fileDir = `${proj.name}:/${editor.fileName}`;
 		if (!focusedEditor) {
 			focusedEditor = editor;

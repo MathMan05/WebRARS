@@ -924,6 +924,7 @@ class Editor extends EventTarget {
 		mut.observe(c);
 		this.renderToCanvas(ctx);
 	}
+	static editMap = new Map<string, Editor>();
 	async assemble() {
 		//TODO I'm sure there's more I can do to make this much smaller in RAM
 		try {
@@ -939,7 +940,12 @@ class Editor extends EventTarget {
 					if (!name.endsWith(".asm")) continue;
 					const thisDir = dir + name;
 					if (thisDir === this.fileDir) continue;
-					build.push([await thing.text(), thisDir]);
+					const editor = Editor.editMap.get(thisDir);
+					if (editor) {
+						build.push([editor.string(), thisDir]);
+					} else {
+						build.push([await thing.text(), thisDir]);
+					}
 				}
 				const [ram, pc] = assemble(build);
 				emu = new Symstem(ram, this.console);
