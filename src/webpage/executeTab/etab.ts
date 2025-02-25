@@ -116,45 +116,51 @@ class Etab {
 	}
 	htmlRegMap = new WeakMap<HTMLElement, HTMLElement[]>();
 	updateRegis() {
-		if (!this.sys) return;
 		const regiArea = document.getElementById("regiArea") as HTMLElement;
-		const elm = regiArea.children[0];
+		if (!this.sys) {
+			regiArea.innerHTML = "";
+			return;
+		}
+
+		let elm = regiArea.children[0] as HTMLElement;
 		if (elm) {
 			const arr = this.htmlRegMap.get(elm as HTMLElement);
-			if (!arr) return;
-			for (let i = 0; i < 32; i++) {
-				arr[i].textContent = "0x" + this.sys.UintRegis[i].toString(16).padStart(16, "0");
+			if (arr) {
+				for (let i = 0; i < 32; i++) {
+					arr[i].textContent = "0x" + this.sys.UintRegis[i].toString(16).padStart(16, "0");
+				}
+				return;
 			}
-		} else {
-			const elm = document.createElement("table");
-			elm.classList.add("regiTable");
-			const regis: HTMLElement[] = [];
+		}
+		regiArea.innerHTML = "";
+		elm = document.createElement("table");
+		elm.classList.add("regiTable");
+		const regis: HTMLElement[] = [];
 
+		const tr = document.createElement("tr");
+		const name = document.createElement("td");
+		name.textContent = I18n.regiTab.name();
+		const number = document.createElement("td");
+		number.textContent = I18n.regiTab.number();
+		const value = document.createElement("td");
+		value.textContent = I18n.regiTab.value();
+		tr.append(name, number, value);
+		elm.append(tr);
+
+		for (let i = 0; i < 32; i++) {
 			const tr = document.createElement("tr");
 			const name = document.createElement("td");
-			name.textContent = I18n.regiTab.name();
+			name.textContent = registerNames.int[i][1];
 			const number = document.createElement("td");
-			number.textContent = I18n.regiTab.number();
+			number.textContent = i + "";
 			const value = document.createElement("td");
-			value.textContent = I18n.regiTab.value();
+			regis.push(value);
 			tr.append(name, number, value);
 			elm.append(tr);
-
-			for (let i = 0; i < 32; i++) {
-				const tr = document.createElement("tr");
-				const name = document.createElement("td");
-				name.textContent = registerNames.int[i][1];
-				const number = document.createElement("td");
-				number.textContent = i + "";
-				const value = document.createElement("td");
-				regis.push(value);
-				tr.append(name, number, value);
-				elm.append(tr);
-			}
-			regiArea.append(elm);
-			this.htmlRegMap.set(elm, regis);
-			this.updateRegis();
 		}
+		regiArea.append(elm);
+		this.htmlRegMap.set(elm, regis);
+		this.updateRegis();
 	}
 	enableButtons() {
 		this.changeButtonStates();

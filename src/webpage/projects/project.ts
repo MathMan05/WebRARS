@@ -11,7 +11,8 @@ class Project {
 	async createNewAsm(name: string) {
 		await this.dir.setString(
 			name,
-			`.data
+			`.global main
+.data
 	hello: .asciz "hello world!"
 
 .text

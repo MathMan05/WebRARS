@@ -2,6 +2,7 @@ import {assemble, AssemblError} from "../assembler/assembler.js";
 import {Console} from "../emulator/console.js";
 import {Symstem} from "../emulator/emulator.js";
 import {I18n} from "../i18n.js";
+import {Directory} from "../utils/utils.js";
 import {Line} from "./line.js";
 interface StateEventMap {
 	Assemble: AssembleEvent;
@@ -55,10 +56,12 @@ class Editor extends EventTarget {
 	};
 	console: Console;
 	fileName: string;
+	fileDir?: string;
 	fontSize = 14;
 	past: {lines: Line[]; cursor: Editor["cursor"]}[] = [];
 	future: {lines: Line[]; cursor: Editor["cursor"]}[] = [];
-	constructor(asm: string, fileName = "name", console: Console) {
+	dir: Directory | undefined;
+	constructor(asm: string, fileName = "name", console: Console, proj: Directory | undefined) {
 		super();
 		this.console = console;
 		this.lines = asm.split("\n").map((_) => new Line(_, this));
@@ -66,6 +69,7 @@ class Editor extends EventTarget {
 			this.lines.push(new Line("", this));
 		}
 		this.fileName = fileName;
+		this.dir = proj;
 	}
 	addEventListener<K extends keyof StateEventMap>(
 		type: K,
@@ -920,12 +924,31 @@ class Editor extends EventTarget {
 		mut.observe(c);
 		this.renderToCanvas(ctx);
 	}
-	assemble() {
+	async assemble() {
 		//TODO I'm sure there's more I can do to make this much smaller in RAM
 		try {
 			this.console.addMessage("\n" + I18n.startingAssembly() + "\n\n");
-			const ram = assemble(this.string());
-			const emu = new Symstem(ram, this.console);
+			let emu: Symstem;
+			if (this.dir && this.fileDir) {
+				const dirL = this.fileDir.split("/");
+				dirL.pop();
+				const dir = dirL.join("/") + "/";
+				const build: [string, string][] = [[this.string(), this.fileDir]];
+				for await (const [name, thing] of this.dir.getAllInDir()) {
+					if (thing instanceof Directory) continue;
+					if (!name.endsWith(".asm")) continue;
+					const thisDir = dir + name;
+					if (thisDir === this.fileDir) continue;
+					build.push([await thing.text(), thisDir]);
+				}
+				const [ram, pc] = assemble(build);
+				emu = new Symstem(ram, this.console);
+				emu.pc = pc;
+			} else {
+				const [ram, pc] = assemble([[this.string(), this.fileDir || this.fileName]]);
+				emu = new Symstem(ram, this.console);
+				emu.pc = pc;
+			}
 			this.console.addMessage("\n" + I18n.finishedAssembly() + "\n\n");
 			this.dispatchEvent(new AssembleEvent("Assemble", emu));
 		} catch (e) {

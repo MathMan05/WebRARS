@@ -5,6 +5,7 @@ import {Console} from "./emulator/console.js";
 import {Etab} from "./executeTab/etab.js";
 import {I18n} from "./i18n.js";
 import {Project} from "./projects/project.js";
+import {ProjFiles} from "./projects/projectFiles.js";
 const actionRow = document.getElementById("actionRow");
 if (!actionRow) throw Error("action row not in document");
 const cons = new Console();
@@ -111,14 +112,18 @@ menu.bindContextmenu(runButton, undefined, undefined, true);
 
 const area = document.getElementById("area") as HTMLElement;
 if (!area) throw Error("area not found");
-const editors: Editor[] = [];
+let editors: Editor[] = [];
 
 let focusedEditor = editors[0];
 
 const newFile = document.getElementById("newFile") as HTMLImageElement;
 newFile.onclick = () => {
 	system.disable();
-	const editor = new Editor("", `riscv${editors.length + 1}.asm`, cons);
+	const editor = new Editor("", `riscv${editors.length + 1}.asm`, cons, curProject?.dir);
+	if (curProject) {
+		editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+		editor.fileDir = `${curProject.name}:/${editor.fileName}`;
+	}
 	editors.push(editor);
 	focusedEditor = editor;
 	editArea();
@@ -137,19 +142,28 @@ executeButton.onclick = () => {
 	executeArea();
 };
 let system = new Etab();
+
+const editMap = new Map<string, Editor>();
+
 const buttons = new Map<Editor, HTMLButtonElement>();
 const saved = new Map<Editor, boolean>();
 let editAreadiv = document.createElement("div");
 let selectedTab: HTMLElement;
-function editArea() {
+async function editArea() {
 	const regiArea = document.getElementById("regiArea") as HTMLElement;
-	regiArea.innerHTML = "";
-	area.innerHTML = "";
 	const tabs = document.createElement("div");
 	tabs.classList.add("tabStyle");
-	area.append(tabs);
 	editButton.classList.add("selected");
 	executeButton.classList.remove("selected");
+	if (projFile) {
+		const html = await projFile.createHTML();
+		regiArea.innerHTML = "";
+		regiArea.append(html);
+	} else {
+		regiArea.innerHTML = "";
+	}
+	area.innerHTML = "";
+	area.append(tabs);
 	if (editors.length !== 0) {
 		for (const editor of editors) {
 			const bu = buttons.get(editor);
@@ -164,6 +178,28 @@ function editArea() {
 			buttons.set(editor, button);
 			button.textContent = editor.fileName;
 			tabs.append(button);
+
+			button.addEventListener("mousedown", (e) => {
+				if (e.button === 1) {
+					const saving = saved.get(editor);
+					if (!saving) {
+						if (!confirm(I18n.unsaved())) {
+							return;
+						}
+					}
+					button.remove();
+					buttons.delete(editor);
+					editors = editors.filter((_) => _ != editor);
+					if (editor.fileDir) {
+						editMap.delete(editor.fileDir);
+					}
+					if (editor == focusedEditor) {
+						focusedEditor = editors[0];
+						editArea();
+					}
+				}
+			});
+
 			button.addEventListener("click", () => {
 				if (focusedEditor !== editor) {
 					system.disable();
@@ -301,7 +337,11 @@ function openNewFile() {
 		if (input.files && input.files.length) {
 			let newEditor: undefined | Editor;
 			for (const file of Array.from(input.files)) {
-				const editor = new Editor(await file.text(), file.name, cons);
+				const editor = new Editor(await file.text(), file.name, cons, curProject?.dir);
+				if (curProject) {
+					editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+					editor.fileDir = `${curProject.name}:/${editor.fileName}`;
+				}
 				newEditor ||= editor;
 				editors.push(editor);
 			}
@@ -329,10 +369,35 @@ function downloadEditor(editor: Editor) {
 	}, 1500);
 }
 let curProject: Project | undefined;
+let projFile: ProjFiles | undefined;
 async function openProject(proj: Project) {
 	curProject = proj;
+	projFile = new ProjFiles(proj);
+	projFile.addEventListener("open", async (e) => {
+		const editor = editMap.get(`${proj.name}:${e.fileName}`);
+		if (editor) {
+			const button = buttons.get(editor);
+			if (button) {
+				button.click();
+				return;
+			}
+		}
+		const newEditor = new Editor(
+			await e.file.text(),
+			e.fileName.split("/").at(-1),
+			cons,
+			curProject?.dir,
+		);
+		editors.push(newEditor);
+		focusedEditor = newEditor;
+		editMap.set(`${proj.name}:/${newEditor.fileName}`, newEditor);
+		newEditor.fileDir = `${proj.name}:/${newEditor.fileName}`;
+		await editArea();
+	});
 	for await (const thing of proj.getAsm()) {
-		const editor = new Editor(await thing[1].text(), thing[0], cons);
+		const editor = new Editor(await thing[1].text(), thing[0], cons, curProject?.dir);
+		editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
+		editor.fileDir = `${proj.name}:/${editor.fileName}`;
 		if (!focusedEditor) {
 			focusedEditor = editor;
 		}

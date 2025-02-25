@@ -1,4 +1,5 @@
-import{Directory}from"../utils/utils.js";class Project{name;dir;constructor(name,dir){this.name=name;this.dir=dir}async createNewAsm(name){await this.dir.setString(name,`.data
+import{Directory}from"../utils/utils.js";class Project{name;dir;constructor(name,dir){this.name=name;this.dir=dir}async createNewAsm(name){await this.dir.setString(name,`.global main
+.data
 	hello: .asciz "hello world!"
 
 .text

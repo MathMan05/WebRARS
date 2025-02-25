@@ -56,9 +56,11 @@
 		"expectedLabel": "Expected label got something else on line $1",
 		"expectedLabelPars": "Expected label in parentheses on line $1",
 		"UErrorType2": "Instruction expected 20 bit immediate or label but found neither on line $1",
-		"unmatchedLabel": "Label on line $1 has no definition",
+		"unmatchedLabel": "Label $2 on line $1 has no definition",
 		"evilJump": "Somehow you tried to do a non-aligned jump on line $1 (if you see this error something went really wrong)",
-		"notAString": "Expected string, got $2 instead on line $1"
+		"notAString": "Expected string, got $2 instead on line $1",
+		"expectGlobal": "Expected label on line $1 but did not, exiting",
+		"unmatchedGlobal": "Global does not match any definition in the file on line $1, exiting"
 	},
 	"runTimeErrors": {
 		"outOfBoundsRead": "Attempted a read out of bounds at $1, exiting",
@@ -82,8 +84,10 @@
 		"name": "Project name:",
 		"pleaseEnterName": "You may not leave the name black, please enter a name",
 		"nameTaken": "This name is already taken by another project",
-		"openExisting": "Open an existing project:"
+		"openExisting": "Open an existing project:",
+		"ProjFileHead": "$1's files:"
 	},
+	"unsaved": "There are unsaved changes, are you sure you want to close this file?",
 	"file": {
 		"file": "File",
 		"open": "Open",
