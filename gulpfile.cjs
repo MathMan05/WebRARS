@@ -3,6 +3,7 @@ const rimraf = require("rimraf");
 const plumber = require("gulp-plumber");
 const fs = require("fs");
 const {swcDir} = require("@swc/cli");
+const {rspack} = require("@rspack/core");
 
 gulp.task(
 	"watch",
@@ -18,9 +19,14 @@ gulp.task("clean", (cb) => {
 	return rimraf.rimraf("dist").then(cb());
 });
 
+/*
+
+ */
 // Task to compile TypeScript files using SWC
 gulp.task("scripts", async () => {
+	const entryPoints = ["/index.ts", "/webpage/index.ts", "/webpage/utils/dirrWorker.ts"];
 	return await new Promise((ret) => {
+		//*
 		swcDir({
 			cliOptions: {
 				outDir: "./dist",
@@ -28,6 +34,17 @@ gulp.task("scripts", async () => {
 				filenames: ["./src"],
 				extensions: [".ts"],
 				stripLeadingPaths: true,
+				jsc: {
+					transform: {
+						optimizer: {
+							globals: {
+								vars: {
+									__DEBUG__: "true",
+								},
+							},
+						},
+					},
+				},
 			},
 			callbacks: {
 				onSuccess: (e) => {
@@ -43,6 +60,19 @@ gulp.task("scripts", async () => {
 				onWatchReady: () => {},
 			},
 		});
+		//*/
+		/*
+		const mapped = entryPoints.map((path) => {
+			return {
+				entry: "./src" + path,
+				output: {filename: "./dist" + path.split(".ts")[0] + ".js"},
+			};
+		});
+		console.log(mapped);
+		const temp = rspack(mapped);
+		temp.run();
+		ret();
+		//*/
 	});
 });
 

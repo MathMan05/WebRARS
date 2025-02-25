@@ -315,5 +315,11 @@
 		"type": "U",
 		"args": ["reg", "20bit"],
 		"opcode": 55
+	},
+	{
+		"name": "b",
+		"type": "fake",
+		"args": ["label"],
+		"replace": "beq x0 x0 %1"
 	}
 ]

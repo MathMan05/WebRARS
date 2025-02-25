@@ -1,6 +1,6 @@
 import {Ram} from "../emulator/ram.js";
 import {I18n} from "../i18n.js";
-import {parseLine} from "./parser.js";
+import {parsedPart, parseLine} from "./parser.js";
 import {instructions, registerNames} from "../fetches.js";
 
 const regNames = new Map<string, {type: "register"; number: number; floating: boolean}>([
@@ -40,6 +40,21 @@ const instMap = new Map(
 		const name = _.name;
 		return [name, _];
 	}),
+);
+const fakeMap = new Map(
+	instructions
+		.filter((_) => _.type === "fake")
+		.map((inst) => {
+			return [
+				inst.name,
+				{
+					name: inst.name,
+					args: inst.args.map((_, i) => i + 1 + ""),
+					lines: inst.replace.split("\n").map((_) => [...parseLine(_)]),
+					line: NaN,
+				},
+			];
+		}),
 );
 
 type symbolType =
@@ -83,10 +98,14 @@ type symbolType =
 class AssemblError extends Error {
 	readonly line: number;
 	readonly file: string;
+	trace: [number, string][] = [];
 	constructor(reason: string, line: number, file: string) {
 		super(reason);
 		this.line = line;
 		this.file = file;
+	}
+	addTrace(line: number, file: string) {
+		this.trace.push([line, file]);
 	}
 }
 type linkerInfo = Map<
@@ -98,6 +117,12 @@ type linkerInfo = Map<
 		file: string;
 	}
 >;
+type macro = {
+	name: string;
+	args: string[];
+	lines: parsedPart[][];
+	line: number;
+};
 type labelMap = Map<string, number>;
 function assemble(files: [string, string][]) {
 	const textView = new DataView(new ArrayBuffer(1 << 22));
@@ -212,675 +237,864 @@ function assemble(files: [string, string][]) {
 				throw new AssemblError("internal error please fix", NaN, file);
 			}
 		}
-		const dataLables: linkerInfo = new Map();
-		const labelMap: labelMap = new Map();
 
 		const basicParsing = code.split("\n").map((_) => parseLine(_));
 
-		let i = 0;
 		let directive: "double" | "float" | "dword" | "word" | "byte" | "half" | "ascii" | "asciz" =
 			"word";
 		let place: "text" | "data" = "text";
-		function placeData(
-			data:
-				| {type: "int"; content: bigint}
-				| {type: "float"; content: number}
-				| {type: "string"; content: string}
-				| {type: "unknown"; content: string}
-				| {
-						type: "instruction";
-						content: number;
-						link?: {type: "I" | "RI" | "S" | "RS" | "B" | "U" | "AU" | "J"; label: string};
-				  },
+
+		const globalLabelSet = new Set<[string, number]>();
+		function assembleParsed(
+			basicParsing: Generator<parsedPart, void, unknown>[] | parsedPart[][],
+			dataLables: linkerInfo = new Map(),
+			labelMap: labelMap = new Map(),
+			varMap = new Map<string, symbolType>(),
+			macros = new Map<string, macro>(),
+			i = 0,
 		) {
-			if (place === "text" && data.type !== "instruction") {
-				if (data.type === "int") {
-					throw new AssemblError(I18n.errors.dataInText(i + 1 + "", data.content + ""), i, file);
+			let macroBuild: macro | undefined;
+			function placeData(
+				data:
+					| {type: "int"; content: bigint}
+					| {type: "float"; content: number}
+					| {type: "string"; content: string}
+					| {type: "unknown"; content: string}
+					| {
+							type: "instruction";
+							content: number;
+							link?: {type: "I" | "RI" | "S" | "RS" | "B" | "U" | "AU" | "J"; label: string};
+					  },
+			) {
+				if (place === "text" && data.type !== "instruction") {
+					if (data.type === "int") {
+						throw new AssemblError(I18n.errors.dataInText(i + 1 + "", data.content + ""), i, file);
+					}
+					throw new AssemblError(
+						I18n.errors.dataInText(i + 1 + "", JSON.stringify(data.content)),
+						i,
+						file,
+					);
 				}
-				throw new AssemblError(
-					I18n.errors.dataInText(i + 1 + "", JSON.stringify(data.content)),
-					i,
-					file,
-				);
-			}
-			if ((directive === "ascii" || directive === "asciz") && place === "data") {
-				if (data.type !== "string") {
-					throw new AssemblError(I18n.errors.notAString(i + 1 + "", data.type), i, file);
+				if ((directive === "ascii" || directive === "asciz") && place === "data") {
+					if (data.type !== "string") {
+						throw new AssemblError(I18n.errors.notAString(i + 1 + "", data.type), i, file);
+					}
+					const encode = new TextEncoder().encode(data.content);
+					for (const char of encode) {
+						dataView.setUint8(dataIndex, char);
+						dataIndex += 1;
+					}
+					if (directive === "asciz") {
+						dataView.setUint8(dataIndex, 0);
+						dataIndex += 1;
+					}
+					return;
+				} else if (data.type === "string") {
+					throw new AssemblError(I18n.errors.stringOutsideOfDirrective(i + 1 + ""), i, file);
 				}
-				const encode = new TextEncoder().encode(data.content);
-				for (const char of encode) {
-					dataView.setUint8(dataIndex, char);
-					dataIndex += 1;
-				}
-				if (directive === "asciz") {
-					dataView.setUint8(dataIndex, 0);
-					dataIndex += 1;
-				}
-				return;
-			} else if (data.type === "string") {
-				throw new AssemblError(I18n.errors.stringOutsideOfDirrective(i + 1 + ""), i, file);
-			}
-			if (data.type === "float") {
-				if (directive === "float") {
-					dataView.setFloat32(dataIndex, data.content, true);
-					dataIndex += 4;
-				} else if (directive === "double") {
-					dataView.setFloat64(dataIndex, data.content, true);
-					dataIndex += 8;
-				} else {
-					throw new AssemblError(I18n.errors.wrongDirrectiveFloat(i + 1 + ""), i, file);
-				}
-			} else if (data.type == "int") {
-				if (directive === "byte") {
-					dataView.setUint8(dataIndex, Number(data.content & 0xffn));
-					dataIndex += 1;
-				} else if (directive === "half") {
-					dataView.setUint16(dataIndex, Number(data.content & 0xffffn), true);
-					dataIndex += 2;
-				} else if (directive === "word") {
-					dataView.setUint32(dataIndex, Number(data.content & 0xffffffffn), true);
-					dataIndex += 4;
-				} else if (directive === "dword") {
-					dataView.setBigUint64(dataIndex, data.content, true);
-					dataIndex += 8;
-				} else if (directive === "float") {
-					dataView.setFloat32(dataIndex, Number(data.content), true);
-					dataIndex += 4;
-				} else if (directive === "double") {
-					dataView.setFloat64(dataIndex, Number(data.content), true);
-					dataIndex += 8;
-				} else {
-					throw new AssemblError("internal error, please fix", NaN, file);
-				}
-			} else if (data.type === "unknown") {
-				if (directive == "float" || directive == "double") {
-					throw new AssemblError(I18n.errors.lableCantFloat(i + 1 + ""), i, file);
-				} else if (directive !== "ascii" && directive != "asciz") {
-					dataLables.set(getCurAddress(), {label: data.content, type: directive, line: i, file});
+				if (data.type === "float") {
+					if (directive === "float") {
+						dataView.setFloat32(dataIndex, data.content, true);
+						dataIndex += 4;
+					} else if (directive === "double") {
+						dataView.setFloat64(dataIndex, data.content, true);
+						dataIndex += 8;
+					} else {
+						throw new AssemblError(I18n.errors.wrongDirrectiveFloat(i + 1 + ""), i, file);
+					}
+				} else if (data.type == "int") {
 					if (directive === "byte") {
+						dataView.setUint8(dataIndex, Number(data.content & 0xffn));
 						dataIndex += 1;
 					} else if (directive === "half") {
+						dataView.setUint16(dataIndex, Number(data.content & 0xffffn), true);
 						dataIndex += 2;
 					} else if (directive === "word") {
+						dataView.setUint32(dataIndex, Number(data.content & 0xffffffffn), true);
 						dataIndex += 4;
 					} else if (directive === "dword") {
+						dataView.setBigUint64(dataIndex, data.content, true);
 						dataIndex += 8;
+					} else if (directive === "float") {
+						dataView.setFloat32(dataIndex, Number(data.content), true);
+						dataIndex += 4;
+					} else if (directive === "double") {
+						dataView.setFloat64(dataIndex, Number(data.content), true);
+						dataIndex += 8;
+					} else {
+						throw new AssemblError("internal error, please fix", NaN, file);
+					}
+				} else if (data.type === "unknown") {
+					if (directive == "float" || directive == "double") {
+						throw new AssemblError(I18n.errors.lableCantFloat(i + 1 + ""), i, file);
+					} else if (directive !== "ascii" && directive != "asciz") {
+						dataLables.set(getCurAddress(), {label: data.content, type: directive, line: i, file});
+						if (directive === "byte") {
+							dataIndex += 1;
+						} else if (directive === "half") {
+							dataIndex += 2;
+						} else if (directive === "word") {
+							dataIndex += 4;
+						} else if (directive === "dword") {
+							dataIndex += 8;
+						}
+					} else {
+						throw new AssemblError("internal error, please fix", NaN, file);
+					}
+				} else if (data.type === "instruction") {
+					if (data.link) {
+						dataLables.set(getCurAddress(), {
+							label: data.link.label,
+							type: data.link.type,
+							line: i,
+							file,
+						});
+					}
+					if (place === "text") {
+						textView.setUint32(textIndex, data.content, true);
+						textIndex += 4;
+					} else {
+						dataView.setUint32(dataIndex, data.content, true);
+						dataIndex += 4;
 					}
 				} else {
 					throw new AssemblError("internal error, please fix", NaN, file);
 				}
-			} else if (data.type === "instruction") {
-				if (data.link) {
-					dataLables.set(getCurAddress(), {
-						label: data.link.label,
-						type: data.link.type,
-						line: i,
-						file,
-					});
-				}
-				if (place === "text") {
-					textView.setUint32(textIndex, data.content, true);
-					textIndex += 4;
-				} else {
-					dataView.setUint32(dataIndex, data.content, true);
-					dataIndex += 4;
-				}
-			} else {
-				throw new AssemblError("internal error, please fix", NaN, file);
 			}
-		}
-		const globalLabelSet = new Set<[string, number]>();
-		for (const line of basicParsing) {
-			let s = 0;
-			const lineArr = [...line];
-			function handleDirrective(data: {type: "directive"; content: string}) {
-				switch (data.content) {
-					case "data":
-						place = "data";
-						break;
-					case "text":
-						place = "text";
-						break;
-					case "ascii":
-					case "asciz":
-					case "double":
-					case "float":
-					case "byte":
-					case "word":
-					case "dword":
-					case "half":
-						if (place === "text") {
-							throw new AssemblError(I18n.errors.dataDirectiveInText(i + 1 + ""), i, file);
+			for (const line of basicParsing) {
+				let s = 0;
+				const lineArr = [...line];
+				if (macroBuild) {
+					if (
+						lineArr.length === 1 &&
+						lineArr[0].type == "directive" &&
+						lineArr[0].content == ".end_macro"
+					) {
+						macros.set(macroBuild.name, macroBuild);
+						macroBuild = undefined;
+						i++;
+						continue;
+					}
+					macroBuild.lines.push(lineArr);
+					i++;
+					continue;
+				}
+				function handleDirrective(data: {type: "directive"; content: string}) {
+					switch (data.content) {
+						case "data":
+							place = "data";
+							break;
+						case "text":
+							place = "text";
+							break;
+						case "ascii":
+						case "asciz":
+						case "double":
+						case "float":
+						case "byte":
+						case "word":
+						case "dword":
+						case "half":
+							if (place === "text") {
+								throw new AssemblError(I18n.errors.dataDirectiveInText(i + 1 + ""), i, file);
+							}
+							directive = data.content;
+							break;
+						case "global":
+						case "globl":
+							let label = getNextSymbol();
+							if (!label) {
+								throw new AssemblError(I18n.errors.expectGlobal(i + 1 + "", data.content), i, file);
+							}
+							while (label) {
+								if (label.type !== "unknown") {
+									throw new AssemblError(
+										I18n.errors.expectedLabel(i + 1 + "", data.content),
+										i,
+										file,
+									);
+								}
+								globalLabelSet.add([label.content, i]);
+								label = getNextSymbol();
+							}
+							break;
+						case "macro":
+							const name = getNextSymbol();
+							if (!name || name.type !== "unknown") {
+								throw new AssemblError(I18n.errors.macroName(i + 1 + "", data.content), i, file);
+							}
+							const params = getNextSymbol();
+							const args: string[] = [];
+							if (params) {
+								if (params.type !== "parentheses") {
+									throw new AssemblError(I18n.errors.macroArgs(i + 1 + "", data.content), i, file);
+								}
+								for (const thing of params.contains) {
+									if (thing.type !== "variable") {
+										throw new AssemblError(
+											I18n.errors.macroArgs(i + 1 + "", data.content),
+											i,
+											file,
+										);
+									}
+									args.push(thing.content);
+								}
+							}
+							macroBuild = {
+								name: name.content,
+								args,
+								lines: [],
+								line: i + 1,
+							};
+							break;
+						default:
+							throw new AssemblError(
+								I18n.errors.unknownDirective(i + 1 + "", data.content),
+								i,
+								file,
+							);
+					}
+				}
+
+				const helperNext = (itterate = true) => {
+					return lineArr[(s += +itterate) - +itterate];
+				};
+				function getNextSymbol(helper = helperNext): symbolType | undefined {
+					const symbol = helper();
+					if (!symbol) return undefined;
+					switch (symbol.type) {
+						case "comment":
+						case "space":
+							return getNextSymbol(helper);
+						case "invalidString":
+							throw new AssemblError(I18n.errors.invalidString(i + 1 + ""), i, file);
+						case "invalidChar":
+							throw new AssemblError(I18n.errors.invalidChar(i + 1 + ""), i, file);
+						case "char":
+							if (
+								symbol.content.length > 3 &&
+								!(symbol.content.length === 4 && symbol.content[1] == "\\")
+							) {
+								throw new AssemblError(I18n.errors.CharTooLong(i + 1 + ""), i, file);
+							}
+							break;
+					}
+					if (symbol.type === "parentheses") {
+						if (symbol.content === "(") {
+							const innards: symbolType[] = [];
+							while (true) {
+								if (helper(false).type === "parentheses") {
+									if (helper(false).content === ")") {
+										s++;
+										return {
+											type: "parentheses",
+											contains: innards,
+										};
+									} else {
+										throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
+									}
+								}
+								const next = getNextSymbol(helper);
+								if (!next) throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
+								innards.push(next);
+							}
+						} else {
+							throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
 						}
-						directive = data.content;
-						break;
-					case "global":
-					case "globl":
-						let label = getNextSymbol();
-						if (!label) {
-							throw new AssemblError(I18n.errors.expectGlobal(i + 1 + "", data.content), i, file);
+					} else if (symbol.type === "char") {
+						const char = [...symbol.content];
+						char.pop();
+						char.shift();
+						const str = JSON.parse(`"${char.join("")}"`) as string;
+						if (str.length !== 1) {
+							throw new AssemblError(I18n.errors.CharTooLong(i + 1 + ""), i, file);
 						}
-						while (label) {
-							if (label.type !== "unknown") {
+						return {
+							type: "int",
+							content: BigInt(new TextEncoder().encode(str)[0]),
+						};
+					} else if (symbol.type === "number") {
+						try {
+							return {
+								type: "int",
+								content: BigInt(symbol.content),
+							};
+						} catch {
+							return {
+								type: "float",
+								content: +symbol.content,
+							};
+						}
+					} else if (symbol.type === "label") {
+						const arr = [...symbol.content];
+						arr.pop();
+						return {
+							type: "label",
+							content: arr.join(""),
+						};
+					} else if (symbol.type === "directive") {
+						const arr = [...symbol.content];
+						arr.shift();
+						return {
+							type: "directive",
+							content: arr.join(""),
+						};
+					} else if (symbol.type === "string") {
+						return {
+							type: "string",
+							content: JSON.parse(symbol.content) as string,
+						};
+					} else if (symbol.type === "register") {
+						const reg = regNames.get(symbol.content);
+						if (reg === undefined) throw new AssemblError("internal error fix me", NaN, file);
+						return reg;
+					} else if (symbol.type === "variable") {
+						const arr = [...symbol.content];
+						arr.shift();
+						const content = arr.join("");
+						const mapped = varMap.get(content);
+						if (mapped) {
+							return mapped;
+						}
+						return {
+							type: "variable",
+							content,
+						};
+					}
+					return {
+						type: symbol.type,
+						content: symbol.content,
+					};
+				}
+				function handleInstruction(data: {type: "instruction"; content: string}) {
+					function get12Bit() {
+						const sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						if (sym.type !== "int")
+							throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
+						if (sym.content < -2048n || sym.content > 2047n) {
+							throw new AssemblError(
+								I18n.errors.OutOfBounts12bit(i + 1 + "", sym.content + ""),
+								i,
+								file,
+							);
+						}
+						return Number(sym.content);
+					}
+					function getNumb() {
+						const sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						if (sym.type !== "int")
+							throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
+						return Number(sym.content);
+					}
+					function get5Bit() {
+						const sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						if (sym.type !== "int")
+							throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
+						if (sym.content < 0n || sym.content > 31n) {
+							throw new AssemblError(
+								I18n.errors.OutOfBounds5bit(i + 1 + "", sym.content + ""),
+								i,
+								file,
+							);
+						}
+						return Number(sym.content);
+					}
+					function getRegi(float = false) {
+						const sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						if (sym.type !== "register")
+							throw new AssemblError(I18n.errors.expectedRegi(i + 1 + ""), i, file);
+						if (!float && sym.floating) {
+							throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
+						} else if (float && !sym.floating) {
+							throw new AssemblError(I18n.errors.expectFloatReg(i + 1 + ""), i, file);
+						}
+						return sym.number;
+					}
+					function getOffReg(type: "I" | "S", load: false | number) {
+						let sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						let offset = 0n;
+						switch (sym.type) {
+							//@ts-expect-error
+							case "int":
+								offset = sym.content;
+								const prev = sym;
+								sym = getNextSymbol();
+								if (!sym) {
+									if (prev.content > 2047n || prev.content < -2048n) {
+										if (load !== false) {
+											if (prev.content !== (prev.content & 0xffffffffn)) {
+											}
+											placeData({
+												type: "instruction",
+												content:
+													0b0110111 |
+													(load << 7) |
+													((Number(prev.content & 0xffffffffn) >> 12) << 12),
+											});
+											return {
+												reg: load,
+												offset: Number(offset) & 0xfff,
+											};
+										} else {
+											throw new AssemblError(
+												I18n.errors.OutOfBountsOff12bit(i + 1 + "", prev.content + ""),
+												i,
+												file,
+											);
+										}
+									}
+									return {
+										reg: 0,
+										offset: Number(offset) & 0xfff,
+									};
+								} else if (sym.type == "parentheses") {
+									//fall
+								} else {
+									throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
+								}
+							case "parentheses":
+								if (sym.contains.length > 1) {
+									throw new AssemblError(I18n.errors.TooManyPars(i + 1 + ""), i, file);
+								} else if (sym.contains.length === 0) {
+									throw new AssemblError(I18n.errors.TooFewPars(i + 1 + ""), i, file);
+								}
+								if (sym.contains[0].type !== "register") {
+									throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
+								} else if (sym.contains[0].floating) {
+									throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
+								}
+								return {
+									reg: sym.contains[0].number,
+									offset: Number(offset) & 0xfff,
+								};
+							case "unknown":
+								if (load === false) {
+									const sym = getNextSymbol();
+									if (!sym)
+										throw new AssemblError(
+											I18n.errors.InstructionNeededMoreParams(i + 1 + ""),
+											i,
+											file,
+										);
+									if (sym.type !== "register") {
+										throw new AssemblError(I18n.errors.expectedRegi(i + 1 + ""), i, file);
+									} else if (sym.floating) {
+										throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
+									}
+									load = sym.number;
+								}
+								placeData({
+									type: "instruction",
+									content: 0b0010111 | (load << 7),
+									link: {type: "AU", label: sym.content},
+								});
+								dataLables.set(getCurAddress(), {
+									label: sym.content,
+									type: ("R" + type) as "RI" | "RS",
+									line: i,
+									file,
+								});
+								return {
+									reg: load,
+									offset: 0,
+								};
+							default:
+								throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
+						}
+					}
+					function getLabel() {
+						const sym = getNextSymbol();
+						if (!sym)
+							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
+						if (sym.type !== "unknown")
+							throw new AssemblError(I18n.errors.expectedLabel(i + 1 + ""), i, file);
+						return sym.content;
+					}
+					function assertClear() {
+						const sym = getNextSymbol();
+						if (sym) throw new AssemblError(I18n.errors.tooManyArguments(i + 1 + ""), i, file);
+					}
+					const info = instMap.get(data.content);
+					if (!info) throw new AssemblError("internal error fix me", i, file);
+
+					switch (info.type) {
+						case "R": {
+							const lay =
+								info.opcode |
+								(getRegi(info.args[0] === "freg") << 7) |
+								(info.funct3 << 12) |
+								(getRegi(info.args[1] === "freg") << 15) |
+								(info.funct7 << 25) |
+								(getRegi(info.args[2] === "freg") << 20);
+							assertClear();
+							placeData({type: "instruction", content: lay});
+							break;
+						}
+						case "I": {
+							if (info.args[1] === "offreg") {
+								const reg = getRegi(info.args[0] === "freg");
+								const off = getOffReg("I", reg);
+								const lay =
+									info.opcode |
+									(reg << 7) |
+									(info.funct3 << 12) |
+									(off.reg << 15) |
+									(off.offset << 20);
+								placeData({type: "instruction", content: lay});
+							} else if (info.pimm !== undefined) {
+								const lay =
+									info.opcode |
+									(getRegi(info.args[0] === "freg") << 7) |
+									(info.funct3 << 12) |
+									(getRegi(info.args[1] === "freg") << 15) |
+									(get5Bit() << 20) |
+									(info.pimm << 25);
+
+								placeData({type: "instruction", content: lay});
+							} else {
+								const lay =
+									info.opcode |
+									(getRegi(info.args[0] === "freg") << 7) |
+									(info.funct3 << 12) |
+									(getRegi(info.args[1] === "freg") << 15) |
+									(get12Bit() << 20);
+
+								placeData({type: "instruction", content: lay});
+							}
+							assertClear();
+							break;
+						}
+						case "S": {
+							const reg = getRegi(info.args[0] === "freg");
+							const off = getOffReg("S", reg);
+							const lay =
+								info.opcode |
+								((off.offset & 0b11111) << 7) |
+								(info.funct3 << 12) |
+								(off.reg << 15) |
+								(reg << 20) |
+								((off.offset >> 5) << 25);
+							placeData({type: "instruction", content: lay});
+							assertClear();
+							break;
+						}
+						case "B": {
+							const lay =
+								info.opcode |
+								(info.funct3 << 12) |
+								(getRegi(info.args[0] === "freg") << 15) |
+								(getRegi(info.args[1] === "freg") << 20);
+							placeData({
+								type: "instruction",
+								content: lay,
+								link: {
+									type: "B",
+									label: getLabel(),
+								},
+							});
+							assertClear();
+							break;
+						}
+						case "J": {
+							const lay = info.opcode | (getRegi() << 7);
+							placeData({
+								type: "instruction",
+								content: lay,
+								link: {
+									type: "J",
+									label: getLabel(),
+								},
+							});
+							assertClear();
+							break;
+						}
+						case "U": {
+							let lay = info.opcode | (getRegi(info.args[0] === "freg") << 7);
+							let next = getNextSymbol();
+							if (!next)
 								throw new AssemblError(
-									I18n.errors.expectedLabel(i + 1 + "", data.content),
+									I18n.errors.InstructionNeededMoreParams(i + 1 + ""),
 									i,
 									file,
 								);
-							}
-							globalLabelSet.add([label.content, i]);
-							label = getNextSymbol();
-						}
-						break;
-					default:
-						throw new AssemblError(I18n.errors.unknownDirective(i + 1 + "", data.content), i, file);
-				}
-			}
-
-			const helperNext = (itterate = true) => {
-				return lineArr[(s += +itterate) - +itterate];
-			};
-			function getNextSymbol(
-				helper = helperNext,
-				varMap = new Map<string, symbolType>(),
-			): symbolType | undefined {
-				const symbol = helper();
-				if (!symbol) return undefined;
-				switch (symbol.type) {
-					case "comment":
-					case "space":
-						return getNextSymbol(helper);
-					case "invalidString":
-						throw new AssemblError(I18n.errors.invalidString(i + 1 + ""), i, file);
-					case "invalidChar":
-						throw new AssemblError(I18n.errors.invalidChar(i + 1 + ""), i, file);
-					case "char":
-						if (
-							symbol.content.length > 3 &&
-							!(symbol.content.length === 4 && symbol.content[1] == "\\")
-						) {
-							throw new AssemblError(I18n.errors.CharTooLong(i + 1 + ""), i, file);
-						}
-						break;
-				}
-				if (symbol.type === "parentheses") {
-					if (symbol.content === "(") {
-						const innards: symbolType[] = [];
-						while (true) {
-							if (helper(false).type === "parentheses") {
-								if (helper(false).content === ")") {
-									s++;
-									return {
-										type: "parentheses",
-										contains: innards,
-									};
-								} else {
-									throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
+							if (next.type === "variable" || next.type == "unknown") {
+								if (next.type === "variable") {
+									next = getNextSymbol();
+									if (!next)
+										throw new AssemblError(
+											I18n.errors.InstructionNeededMoreParams(i + 1 + ""),
+											i,
+											file,
+										);
+									if (next.type !== "parentheses")
+										throw new AssemblError(I18n.errors.expectedLabelPars(i + 1 + ""), i, file);
+									if (next.contains.length > 1)
+										throw new AssemblError(I18n.errors.TooManyPars(i + 1 + ""), i, file);
+									if (next.contains.length < 1)
+										throw new AssemblError(I18n.errors.TooFewPars(i + 1 + ""), i, file);
+									next = next.contains[0];
+									if (next.type !== "unknown")
+										throw new AssemblError(I18n.errors.expectedLabel(i + 1 + ""), i, file);
 								}
+								placeData({
+									type: "instruction",
+									content: lay,
+									link: {
+										type: info.name === "auipc" ? "AU" : "U",
+										label: next.content,
+									},
+								});
+							} else if (next.type === "int") {
+								if (next.content < -524288n || next.content > 524287n) {
+									throw new AssemblError(I18n.errors.OutOfBounts20bit(i + 1 + ""), i, file);
+								}
+								lay = lay | (Number(next.content) << 12);
+								placeData({
+									type: "instruction",
+									content: lay,
+								});
+							} else {
+								throw new AssemblError(I18n.errors.UErrorType2(i + 1 + ""), i, file);
 							}
-							const next = getNextSymbol(helper);
-							if (!next) throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
-							innards.push(next);
+							assertClear();
+							break;
 						}
-					} else {
-						throw new AssemblError(I18n.errors.ParNoMatch(i + 1 + ""), i, file);
-					}
-				} else if (symbol.type === "char") {
-					const char = [...symbol.content];
-					char.pop();
-					char.shift();
-					const str = JSON.parse(`"${char.join("")}"`) as string;
-					if (str.length !== 1) {
-						throw new AssemblError(I18n.errors.CharTooLong(i + 1 + ""), i, file);
-					}
-					return {
-						type: "int",
-						content: BigInt(new TextEncoder().encode(str)[0]),
-					};
-				} else if (symbol.type === "number") {
-					try {
-						return {
-							type: "int",
-							content: BigInt(symbol.content),
-						};
-					} catch {
-						return {
-							type: "float",
-							content: +symbol.content,
-						};
-					}
-				} else if (symbol.type === "label") {
-					const arr = [...symbol.content];
-					arr.pop();
-					return {
-						type: "label",
-						content: arr.join(""),
-					};
-				} else if (symbol.type === "directive") {
-					const arr = [...symbol.content];
-					arr.shift();
-					return {
-						type: "directive",
-						content: arr.join(""),
-					};
-				} else if (symbol.type === "string") {
-					return {
-						type: "string",
-						content: JSON.parse(symbol.content) as string,
-					};
-				} else if (symbol.type === "register") {
-					const reg = regNames.get(symbol.content);
-					if (reg === undefined) throw new AssemblError("internal error fix me", NaN, file);
-					return reg;
-				} else if (symbol.type === "variable") {
-					const arr = [...symbol.content];
-					arr.shift();
-					const content = arr.join("");
-					const mapped = varMap.get(content);
-					if (mapped) {
-						return mapped;
-					}
-					return {
-						type: "variable",
-						content,
-					};
-				}
-				return {
-					type: symbol.type,
-					content: symbol.content,
-				};
-			}
-			function handleInstruction(data: {type: "instruction"; content: string}) {
-				function get12Bit() {
-					const sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					if (sym.type !== "int")
-						throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
-					if (sym.content < -2048n || sym.content > 2047n) {
-						throw new AssemblError(
-							I18n.errors.OutOfBounts12bit(i + 1 + "", sym.content + ""),
-							i,
-							file,
-						);
-					}
-					return Number(sym.content);
-				}
-				function getNumb() {
-					const sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					if (sym.type !== "int")
-						throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
-					return Number(sym.content);
-				}
-				function get5Bit() {
-					const sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					if (sym.type !== "int")
-						throw new AssemblError(I18n.errors.expectedInt(i + 1 + ""), i, file);
-					if (sym.content < 0n || sym.content > 31n) {
-						throw new AssemblError(
-							I18n.errors.OutOfBounds5bit(i + 1 + "", sym.content + ""),
-							i,
-							file,
-						);
-					}
-					return Number(sym.content);
-				}
-				function getRegi(float = false) {
-					const sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					if (sym.type !== "register")
-						throw new AssemblError(I18n.errors.expectedRegi(i + 1 + ""), i, file);
-					if (!float && sym.floating) {
-						throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
-					} else if (float && !sym.floating) {
-						throw new AssemblError(I18n.errors.expectFloatReg(i + 1 + ""), i, file);
-					}
-					return sym.number;
-				}
-				function getOffReg(type: "I" | "S", load: false | number) {
-					let sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					let offset = 0n;
-					switch (sym.type) {
-						//@ts-expect-error
-						case "int":
-							offset = sym.content;
-							const prev = sym;
-							sym = getNextSymbol();
-							if (!sym) {
-								if (prev.content > 2047n || prev.content < -2048n) {
-									if (load !== false) {
-										if (prev.content !== (prev.content & 0xffffffffn)) {
-										}
-										placeData({
-											type: "instruction",
-											content:
-												0b0110111 |
-												(load << 7) |
-												((Number(prev.content & 0xffffffffn) >> 12) << 12),
-										});
-										return {
-											reg: load,
-											offset: Number(offset) & 0xfff,
-										};
+						case "W": {
+							placeData({type: "instruction", content: info.code});
+							assertClear();
+							break;
+						}
+						case "fake": {
+							const macro = fakeMap.get(info.name);
+							if (macro) {
+								const argBuild: symbolType[] = [];
+								let thing = getNextSymbol();
+
+								while (thing) {
+									argBuild.push(thing);
+									thing = getNextSymbol();
+								}
+
+								if (argBuild.length !== macro.args.length) {
+									if (argBuild.length > macro.args.length) {
+										throw new AssemblError(
+											I18n.errors.tooManyArguments(
+												i + 1 + "",
+												macro.args.length + "",
+												argBuild.length + "",
+											),
+											i,
+											file,
+										);
 									} else {
 										throw new AssemblError(
-											I18n.errors.OutOfBountsOff12bit(i + 1 + "", prev.content + ""),
+											I18n.errors.TooFewPars(
+												i + 1 + "",
+												macro.args.length + "",
+												argBuild.length + "",
+											),
 											i,
 											file,
 										);
 									}
 								}
-								return {
-									reg: 0,
-									offset: Number(offset) & 0xfff,
-								};
-							} else if (sym.type == "parentheses") {
-								//fall
+								const argMap = new Map(
+									argBuild.map((_, index) => {
+										return [macro.args[index], _];
+									}),
+								);
+								const sdirective = directive;
+								const splace = place;
+								try {
+									assembleParsed(
+										macro.lines,
+										new Map(dataLables),
+										new Map(labelMap),
+										argMap,
+										new Map(macros),
+										macro.line,
+									);
+								} catch (e) {
+									if (e instanceof AssemblError) {
+										e.addTrace(i, file);
+										throw e;
+									} else {
+										throw e;
+									}
+								}
+								directive = sdirective;
+								place = splace;
+								break;
 							} else {
-								throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
+								throw new AssemblError("internal error, please fix", NaN, file);
 							}
-						case "parentheses":
-							if (sym.contains.length > 1) {
-								throw new AssemblError(I18n.errors.TooManyPars(i + 1 + ""), i, file);
-							} else if (sym.contains.length === 0) {
-								throw new AssemblError(I18n.errors.TooFewPars(i + 1 + ""), i, file);
-							}
-							if (sym.contains[0].type !== "register") {
-								throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
-							} else if (sym.contains[0].floating) {
-								throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
-							}
-							return {
-								reg: sym.contains[0].number,
-								offset: Number(offset) & 0xfff,
-							};
-						case "unknown":
-							if (load === false) {
-								const sym = getNextSymbol();
-								if (!sym)
-									throw new AssemblError(
-										I18n.errors.InstructionNeededMoreParams(i + 1 + ""),
-										i,
-										file,
-									);
-								if (sym.type !== "register") {
-									throw new AssemblError(I18n.errors.expectedRegi(i + 1 + ""), i, file);
-								} else if (sym.floating) {
-									throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
+						}
+						case "reallyfake": {
+							switch (info.name) {
+								case "la": {
+									const reg = getRegi();
+									const label = getLabel();
+									assertClear();
+									placeData({
+										type: "instruction",
+										content: 0b0010111 | (reg << 7),
+										link: {type: "AU", label},
+									});
+									placeData({
+										type: "instruction",
+										content: 0b0010011 | (reg << 7) | (reg << 15),
+										link: {type: "RI", label},
+									});
+									break;
 								}
-								load = sym.number;
-							}
-							placeData({
-								type: "instruction",
-								content: 0b0010111 | (load << 7),
-								link: {type: "AU", label: sym.content},
-							});
-							dataLables.set(getCurAddress(), {
-								label: sym.content,
-								type: ("R" + type) as "RI" | "RS",
-								line: i,
-								file,
-							});
-							return {
-								reg: load,
-								offset: 0,
-							};
-						default:
-							throw new AssemblError(I18n.errors.expectOffreg(i + 1 + ""), i, file);
-					}
-				}
-				function getLabel() {
-					const sym = getNextSymbol();
-					if (!sym)
-						throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-					if (sym.type !== "unknown")
-						throw new AssemblError(I18n.errors.expectedLabel(i + 1 + ""), i, file);
-					return sym.content;
-				}
-				function assertClear() {
-					const sym = getNextSymbol();
-					if (sym) throw new AssemblError(I18n.errors.tooManyArguments(i + 1 + ""), i, file);
-				}
-				const info = instMap.get(data.content);
-				if (!info) throw new AssemblError("internal error fix me", i, file);
-
-				switch (info.type) {
-					case "R": {
-						const lay =
-							info.opcode |
-							(getRegi(info.args[0] === "freg") << 7) |
-							(info.funct3 << 12) |
-							(getRegi(info.args[1] === "freg") << 15) |
-							(info.funct7 << 25) |
-							(getRegi(info.args[2] === "freg") << 20);
-						assertClear();
-						placeData({type: "instruction", content: lay});
-						break;
-					}
-					case "I": {
-						if (info.args[1] === "offreg") {
-							const reg = getRegi(info.args[0] === "freg");
-							const off = getOffReg("I", reg);
-							const lay =
-								info.opcode |
-								(reg << 7) |
-								(info.funct3 << 12) |
-								(off.reg << 15) |
-								(off.offset << 20);
-							placeData({type: "instruction", content: lay});
-						} else if (info.pimm !== undefined) {
-							const lay =
-								info.opcode |
-								(getRegi(info.args[0] === "freg") << 7) |
-								(info.funct3 << 12) |
-								(getRegi(info.args[1] === "freg") << 15) |
-								(get5Bit() << 20) |
-								(info.pimm << 25);
-
-							placeData({type: "instruction", content: lay});
-						} else {
-							const lay =
-								info.opcode |
-								(getRegi(info.args[0] === "freg") << 7) |
-								(info.funct3 << 12) |
-								(getRegi(info.args[1] === "freg") << 15) |
-								(get12Bit() << 20);
-
-							placeData({type: "instruction", content: lay});
-						}
-						assertClear();
-						break;
-					}
-					case "S": {
-						const reg = getRegi(info.args[0] === "freg");
-						const off = getOffReg("S", reg);
-						const lay =
-							info.opcode |
-							((off.offset & 0b11111) << 7) |
-							(info.funct3 << 12) |
-							(off.reg << 15) |
-							(reg << 20) |
-							((off.offset >> 5) << 25);
-						placeData({type: "instruction", content: lay});
-						assertClear();
-						break;
-					}
-					case "B": {
-						const lay =
-							info.opcode |
-							(info.funct3 << 12) |
-							(getRegi(info.args[0] === "freg") << 15) |
-							(getRegi(info.args[1] === "freg") << 20);
-						placeData({
-							type: "instruction",
-							content: lay,
-							link: {
-								type: "B",
-								label: getLabel(),
-							},
-						});
-						assertClear();
-						break;
-					}
-					case "J": {
-						const lay = info.opcode | (getRegi() << 7);
-						placeData({
-							type: "instruction",
-							content: lay,
-							link: {
-								type: "J",
-								label: getLabel(),
-							},
-						});
-						assertClear();
-						break;
-					}
-					case "U": {
-						let lay = info.opcode | (getRegi(info.args[0] === "freg") << 7);
-						let next = getNextSymbol();
-						if (!next)
-							throw new AssemblError(I18n.errors.InstructionNeededMoreParams(i + 1 + ""), i, file);
-						if (next.type === "variable" || next.type == "unknown") {
-							if (next.type === "variable") {
-								next = getNextSymbol();
-								if (!next)
-									throw new AssemblError(
-										I18n.errors.InstructionNeededMoreParams(i + 1 + ""),
-										i,
-										file,
-									);
-								if (next.type !== "parentheses")
-									throw new AssemblError(I18n.errors.expectedLabelPars(i + 1 + ""), i, file);
-								if (next.contains.length > 1)
-									throw new AssemblError(I18n.errors.TooManyPars(i + 1 + ""), i, file);
-								if (next.contains.length < 1)
-									throw new AssemblError(I18n.errors.TooFewPars(i + 1 + ""), i, file);
-								next = next.contains[0];
-								if (next.type !== "unknown")
-									throw new AssemblError(I18n.errors.expectedLabel(i + 1 + ""), i, file);
-							}
-							placeData({
-								type: "instruction",
-								content: lay,
-								link: {
-									type: info.name === "auipc" ? "AU" : "U",
-									label: next.content,
-								},
-							});
-						} else if (next.type === "int") {
-							if (next.content < -524288n || next.content > 524287n) {
-								throw new AssemblError(I18n.errors.OutOfBounts20bit(i + 1 + ""), i, file);
-							}
-							lay = lay | (Number(next.content) << 12);
-							placeData({
-								type: "instruction",
-								content: lay,
-							});
-						} else {
-							throw new AssemblError(I18n.errors.UErrorType2(i + 1 + ""), i, file);
-						}
-						assertClear();
-						break;
-					}
-					case "W": {
-						placeData({type: "instruction", content: info.code});
-						assertClear();
-						break;
-					}
-					case "reallyfake": {
-						switch (info.name) {
-							case "la": {
-								const reg = getRegi();
-								const label = getLabel();
-								assertClear();
-								placeData({
-									type: "instruction",
-									content: 0b0010111 | (reg << 7),
-									link: {type: "AU", label},
-								});
-								placeData({
-									type: "instruction",
-									content: 0b0010011 | (reg << 7) | (reg << 15),
-									link: {type: "RI", label},
-								});
-								break;
-							}
-							case "li": {
-								const reg = getRegi();
-								const numb = getNumb();
-								assertClear();
-								if (numb <= 2047n && numb >= -2048) {
-									placeData({
-										type: "instruction",
-										content: 0b0010011 | (reg << 7) | (Number(numb) << 20),
-									});
-								} else if (numb <= 2147483647n && numb >= -2147483648) {
-									placeData({
-										type: "instruction",
-										content: 0b0110111 | (reg << 7) | (Number(numb) & 0xfffff000),
-									});
-									placeData({
-										type: "instruction",
-										content: 0b0010011 | (reg << 7) | ((Number(numb) & 0xfff) << 20),
-									});
+								case "li": {
+									const reg = getRegi();
+									const numb = getNumb();
+									assertClear();
+									if (numb <= 2047n && numb >= -2048) {
+										placeData({
+											type: "instruction",
+											content: 0b0010011 | (reg << 7) | (Number(numb) << 20),
+										});
+									} else if (numb <= 2147483647n && numb >= -2147483648) {
+										placeData({
+											type: "instruction",
+											content: 0b0110111 | (reg << 7) | (Number(numb) & 0xfffff000),
+										});
+										placeData({
+											type: "instruction",
+											content: 0b0010011 | (reg << 7) | ((Number(numb) & 0xfff) << 20),
+										});
+									}
+									break;
 								}
-								break;
 							}
 						}
 					}
 				}
-			}
-			while (true) {
-				const sym = getNextSymbol();
-				if (!sym) {
-					break;
-				}
+				while (true) {
+					const sym = getNextSymbol();
+					if (!sym) {
+						break;
+					}
 
-				switch (sym.type) {
-					case "unknown":
-					case "int":
-					case "float":
-					case "string":
-						placeData(sym);
-						break;
-					case "label":
-						//TODO check for conflicts
-						labelMap.set(sym.content, getCurAddress());
-						break;
-					case "register":
-						throw new AssemblError(I18n.errors.loneRegister(i + 1 + ""), i, file);
-					case "variable":
-						throw new AssemblError(I18n.errors.varOutsideMacro(i + 1 + ""), i, file);
-					case "parentheses":
-						throw new AssemblError(I18n.errors.parenthesesWeird(i + 1 + ""), i, file);
-					case "directive":
-						handleDirrective(sym);
-						break;
-					case "instruction":
-						handleInstruction(sym);
-						break;
-					default:
+					switch (sym.type) {
 						//@ts-expect-error
-						console.error(sym.type, "not handled");
+						case "unknown":
+							const macro = macros.get(sym.content);
+							if (macro) {
+								let argBuild: symbolType[] = [];
+								let thing = getNextSymbol();
+								if (thing) {
+									if (thing.type === "parentheses") {
+										argBuild = thing.contains;
+									} else {
+										while (thing) {
+											argBuild.push(thing);
+											thing = getNextSymbol();
+										}
+									}
+								}
+								if (argBuild.length !== macro.args.length) {
+									if (argBuild.length > macro.args.length) {
+										throw new AssemblError(
+											I18n.errors.tooManyArgumentsMacro(
+												i + 1 + "",
+												macro.args.length + "",
+												argBuild.length + "",
+											),
+											i,
+											file,
+										);
+									} else {
+										throw new AssemblError(
+											I18n.errors.tooFewArgumentsMacro(
+												i + 1 + "",
+												macro.args.length + "",
+												argBuild.length + "",
+											),
+											i,
+											file,
+										);
+									}
+								}
+								const argMap = new Map(
+									argBuild.map((_, index) => {
+										return [macro.args[index], _];
+									}),
+								);
+								const sdirective = directive;
+								const splace = place;
+								try {
+									assembleParsed(
+										macro.lines,
+										new Map(dataLables),
+										new Map(labelMap),
+										argMap,
+										new Map(macros),
+										macro.line,
+									);
+								} catch (e) {
+									if (e instanceof AssemblError) {
+										e.addTrace(i, file);
+										throw e;
+									} else {
+										throw e;
+									}
+								}
+								directive = sdirective;
+								place = splace;
+								break;
+							}
+						case "int":
+						case "float":
+						case "string":
+							placeData(sym);
+							break;
+						case "label":
+							//TODO check for conflicts
+							labelMap.set(sym.content, getCurAddress());
+							break;
+						case "register":
+							throw new AssemblError(I18n.errors.loneRegister(i + 1 + ""), i, file);
+						case "variable":
+							throw new AssemblError(I18n.errors.varOutsideMacro(i + 1 + ""), i, file);
+						case "parentheses":
+							throw new AssemblError(I18n.errors.parenthesesWeird(i + 1 + ""), i, file);
+						case "directive":
+							handleDirrective(sym);
+							break;
+						case "instruction":
+							handleInstruction(sym);
+							break;
+						default:
+							//@ts-expect-error
+							console.error(sym.type, "not handled");
+					}
 				}
+				i++;
 			}
-			i++;
-		}
-		for (const [thing, line] of globalLabelSet) {
-			const label = labelMap.get(thing);
-			if (!label) {
-				throw new AssemblError(I18n.errors.unmatchedLabel(line + 1 + "", thing), line, file);
+			for (const [thing, line] of globalLabelSet) {
+				const label = labelMap.get(thing);
+				if (!label) {
+					throw new AssemblError(I18n.errors.unmatchedLabel(line + 1 + "", thing), line, file);
+				}
+				globalLabelMap.set(thing, label);
 			}
-			globalLabelMap.set(thing, label);
+			link(labelMap, dataLables);
 		}
-		link(labelMap, dataLables);
+		assembleParsed(basicParsing);
 	}
 	const ram = link(globalLabelMap, globalDataLabels, true);
 	const main = globalLabelMap.get("main");

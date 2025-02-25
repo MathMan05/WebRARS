@@ -44,6 +44,7 @@
 		"expectFloatReg": "Expected a float register, instead got int register on line $1",
 		"expectIntReg": "Expected an int register, instead got float register on line $1",
 		"tooManyArguments": "Instruction got too many argument on line $1",
+		"tooFewArguments": "Instruction got too few argument on line $1",
 		"expectedInt": "Instruction expected int, got something else on line $1",
 		"OutOfBounts32bit": "Integer expected to be in range -2147483648, 2147483647 got $2 on line $1",
 		"OutOfBounts20bit": "Integer expected to be in range -524288, 524287 got $2 on line $1",
@@ -60,7 +61,11 @@
 		"evilJump": "Somehow you tried to do a non-aligned jump on line $1 (if you see this error something went really wrong)",
 		"notAString": "Expected string, got $2 instead on line $1",
 		"expectGlobal": "Expected label on line $1 but did not, exiting",
-		"unmatchedGlobal": "Global does not match any definition in the file on line $1, exiting"
+		"unmatchedGlobal": "Global does not match any definition in the file on line $1, exiting",
+		"macroName": "Macro expected name on line $1 but did not get a name, exiting.",
+		"macroArgs": "Macro expected arguments in parentheses on line $1 but got something else instead, exiting.",
+		"tooManyArgumentsMacro": "Macro on line $1 got too many arguments, expected $2 got $3",
+		"tooFewArgumentsMacro": "Macro on line $1 got too few arguments, expected $2 got $3"
 	},
 	"runTimeErrors": {
 		"outOfBoundsRead": "Attempted a read out of bounds at $1, exiting",

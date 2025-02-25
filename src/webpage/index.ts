@@ -145,6 +145,16 @@ let system = new Etab();
 
 const buttons = new Map<Editor, HTMLButtonElement>();
 const saved = new Map<Editor, boolean>();
+
+function checkIfReload() {
+	for (const [_, bool] of saved) {
+		if (!bool) {
+			window.onbeforeunload = () => "true";
+			return;
+		}
+	}
+	window.onbeforeunload = null;
+}
 let editAreadiv = document.createElement("div");
 let selectedTab: HTMLElement;
 async function editArea() {
@@ -246,9 +256,11 @@ async function editArea() {
 				}
 			});
 			saved.set(editor, true);
+			checkIfReload();
 			editor.addEventListener("save", () => {
 				button.textContent = editor.fileName;
 				saved.set(editor, true);
+				checkIfReload();
 				if (curProject) {
 					curProject.saveAsm(editor.fileName, editor.string());
 				} else {
@@ -258,6 +270,7 @@ async function editArea() {
 			editor.addEventListener("changed", () => {
 				button.textContent = editor.fileName + "*";
 				saved.set(editor, false);
+				checkIfReload();
 				system.disable();
 			});
 			if (editor === focusedEditor) {
