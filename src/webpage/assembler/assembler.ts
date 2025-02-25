@@ -258,7 +258,6 @@ function assemble(files: [string, string][]) {
 				}
 				return;
 			} else if (data.type === "string") {
-				debugger;
 				throw new AssemblError(I18n.errors.stringOutsideOfDirrective(i + 1 + ""), i, file);
 			}
 			if (data.type === "float") {
@@ -465,12 +464,9 @@ function assemble(files: [string, string][]) {
 						content: arr.join(""),
 					};
 				} else if (symbol.type === "string") {
-					const arr = [...symbol.content];
-					arr.shift();
-					arr.pop();
 					return {
 						type: "string",
-						content: arr.join(""),
+						content: JSON.parse(symbol.content) as string,
 					};
 				} else if (symbol.type === "register") {
 					const reg = regNames.get(symbol.content);

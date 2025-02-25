@@ -73,5 +73,20 @@ main:
 			}
 		}
 	}
+	async getFile(str: string): Promise<File> {
+		const [name, strPath] = str.split(":");
+		if (name !== this.name) console.error("something bad happened, but ignoring it");
+		const path = strPath.split("/").reverse();
+		path.pop();
+		let dir = this.dir;
+		while (path.length > 1) {
+			dir = await dir.getDir(path.pop() as string);
+		}
+		const file = await dir.getRawFile(path[0]);
+		if (!file) {
+			throw Error("file somehow not found");
+		}
+		return file;
+	}
 }
 export {Project};

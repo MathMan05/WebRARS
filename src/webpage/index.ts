@@ -214,13 +214,32 @@ async function editArea() {
 				button.classList.add("selected");
 				selectedTab = button;
 			});
-			editor.addEventListener("Assemble", (e) => {
+			editor.addEventListener("Assemble", async (e) => {
 				if (e.sys instanceof AssemblError) {
-					button.click();
-					try {
-						editor.giveError(e.sys);
-					} catch {
-						console.error(e);
+					if (e.sys.file === (editor.fileDir || editor.fileName)) {
+						button.click();
+						try {
+							editor.giveError(e.sys);
+						} catch {
+							console.error(e);
+						}
+					} else {
+						if (!curProject) throw new Error("wow, something really broke, not sure what");
+						let editor = editMap.get(e.sys.file);
+						if (!editor) {
+							const file = await curProject.getFile(e.sys.file);
+							editor = new Editor(await file.text(), file.name, cons, curProject?.dir);
+							editMap.set(e.sys.file, editor);
+							editor.fileDir = e.sys.file;
+							editors.push(editor);
+						}
+						focusedEditor = editor;
+						try {
+							editor.giveError(e.sys);
+						} catch {
+							console.error(e);
+						}
+						editArea();
 					}
 					cons.addMessage(e.sys.message, true);
 				} else {
