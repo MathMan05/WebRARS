@@ -43,6 +43,36 @@ fileMenu.addButton(
 	},
 );
 
+fileMenu.addButton(
+	() => I18n.file.delete(),
+	async () => {
+		if (curProject) {
+			const editor = focusedEditor;
+			if (editor.fileDir) {
+				if (!confirm(I18n.confirmDelete(editor.fileName))) {
+					return;
+				}
+
+				const button = buttons.get(editor);
+				if (button) button.remove();
+				buttons.delete(editor);
+				editors = editors.filter((_) => _ != editor);
+				if (editor.fileDir) {
+					Editor.editMap.delete(editor.fileDir);
+				}
+				focusedEditor = editors[0];
+				await editArea();
+
+				await curProject.delete(editor.fileDir);
+				createRegiArea();
+			}
+		}
+	},
+	{
+		visable: () => !!curProject,
+	},
+);
+
 const fileButton = document.createElement("button");
 fileButton.textContent = I18n.file.file();
 actionRow.append(fileButton);
@@ -117,9 +147,17 @@ let editors: Editor[] = [];
 let focusedEditor = editors[0];
 
 const newFile = document.getElementById("newFile") as HTMLImageElement;
-newFile.onclick = () => {
+newFile.onclick = async () => {
 	system.disable();
-	const editor = new Editor("", `riscv${editors.length + 1}.asm`, cons, curProject?.dir);
+	let i = 0;
+	let name = `riscv${editors.length + 1}.asm`;
+	if (curProject) {
+		while (await curProject.checkName(curProject.name + ":/" + name)) {
+			i++;
+			name = `riscv${editors.length + 1 + i}.asm`;
+		}
+	}
+	const editor = new Editor("", name, cons, curProject?.dir);
 	if (curProject) {
 		Editor.editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
 		editor.fileDir = `${curProject.name}:/${editor.fileName}`;

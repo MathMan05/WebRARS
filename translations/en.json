@@ -85,6 +85,7 @@
 	"startScreen": "Open a file or start a project!",
 	"startProject": "Start a new project",
 	"openFile": "Open a file!",
+	"confirmDelete": "Are you sure you want to delete $1?",
 	"project": {
 		"name": "Project name:",
 		"pleaseEnterName": "You may not leave the name black, please enter a name",
@@ -99,7 +100,8 @@
 		"new": "New",
 		"save": "Save file",
 		"saveAs": "Save file as",
-		"saveAll": "Save All"
+		"saveAll": "Save All",
+		"delete": "Delete File"
 	},
 	"submit": "Submit"
 }

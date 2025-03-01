@@ -31,7 +31,7 @@
 		"name": "ebreak",
 		"type": "W",
 		"args": [],
-		"code": 4194388
+		"code": 1048691
 	},
 	{
 		"name": "addi",

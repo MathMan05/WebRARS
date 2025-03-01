@@ -88,5 +88,34 @@ main:
 		}
 		return file;
 	}
+	async checkName(str: string): Promise<boolean> {
+		const [name, strPath] = str.split(":");
+		if (name !== this.name) console.error("something bad happened, but ignoring it");
+		const path = strPath.split("/").reverse();
+		path.pop();
+		let dir = this.dir;
+		while (path.length > 1) {
+			dir = await dir.getDir(path.pop() as string);
+		}
+		const file = await dir.getRawFile(path[0]);
+		console.log(!!file);
+		return !!file;
+	}
+	async delete(str: string) {
+		const [name, strPath] = str.split(":");
+		if (name !== this.name) console.error("something bad happened, but ignoring it");
+		const path = strPath.split("/").reverse();
+		path.pop();
+		let dir = this.dir;
+		while (path.length > 1) {
+			dir = await dir.getDir(path.pop() as string);
+		}
+		console.log(dir);
+		if (dir instanceof Directory) {
+			await dir.handle.removeEntry(path[0]);
+		} else {
+			console.error("internal error, please fix me sometime :P");
+		}
+	}
 }
 export {Project};

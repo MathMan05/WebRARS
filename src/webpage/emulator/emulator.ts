@@ -169,7 +169,8 @@ class Symstem {
 					);
 			}
 			return true;
-		} else if (inst.inst === 4194388) {
+		} else if (inst.inst === 1048691) {
+			this.pc += 4;
 			return false;
 		} else {
 			throw new runTimeError(I18n.runTimeErrors.unknownInstruction((inst.inst & 0b1111111) + ""));
