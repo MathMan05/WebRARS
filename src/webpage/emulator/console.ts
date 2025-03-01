@@ -96,7 +96,8 @@ class Console {
 			const lines = m.split("\n");
 
 			const child = this.consoleArea.children[0];
-			if (child instanceof HTMLSpanElement && child.textContent) {
+			if (child instanceof HTMLSpanElement) {
+				child.textContent ||= "";
 				child.textContent += lines.shift();
 			}
 			for (const line of lines) {
@@ -126,7 +127,8 @@ class Console {
 		} else {
 			const lines = m.split("\n");
 			const child = this.consoleArea.children[0];
-			if (child instanceof HTMLSpanElement && child.textContent) {
+			if (child instanceof HTMLSpanElement) {
+				child.textContent ||= "";
 				child.textContent += lines.shift();
 			}
 			for (const line of lines) {
