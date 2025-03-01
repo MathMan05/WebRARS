@@ -28,6 +28,12 @@
 		"code": 115
 	},
 	{
+		"name": "ebreak",
+		"type": "W",
+		"args": [],
+		"code": 4194388
+	},
+	{
 		"name": "addi",
 		"type": "I",
 		"args": ["reg", "reg", "12bit"],
@@ -198,7 +204,7 @@
 		"args": ["reg", "reg", "reg"]
 	},
 	{
-		"name": "srl",
+		"name": "sra",
 		"type": "R",
 		"opcode": 51,
 		"funct3": 5,
