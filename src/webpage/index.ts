@@ -127,6 +127,9 @@ newFile.onclick = () => {
 	editors.push(editor);
 	focusedEditor = editor;
 	editArea();
+	if (curProject) {
+		setTimeout(() => editor.save(), 100);
+	}
 };
 
 assemble.onclick = () => {
@@ -157,12 +160,8 @@ function checkIfReload() {
 }
 let editAreadiv = document.createElement("div");
 let selectedTab: HTMLElement;
-async function editArea() {
+async function createRegiArea() {
 	const regiArea = document.getElementById("regiArea") as HTMLElement;
-	const tabs = document.createElement("div");
-	tabs.classList.add("tabStyle");
-	editButton.classList.add("selected");
-	executeButton.classList.remove("selected");
 	if (projFile) {
 		const html = await projFile.createHTML();
 		regiArea.innerHTML = "";
@@ -170,6 +169,13 @@ async function editArea() {
 	} else {
 		regiArea.innerHTML = "";
 	}
+}
+async function editArea() {
+	const tabs = document.createElement("div");
+	tabs.classList.add("tabStyle");
+	editButton.classList.add("selected");
+	executeButton.classList.remove("selected");
+	await createRegiArea();
 	area.innerHTML = "";
 	area.append(tabs);
 	if (editors.length !== 0) {
@@ -257,12 +263,13 @@ async function editArea() {
 			});
 			saved.set(editor, true);
 			checkIfReload();
-			editor.addEventListener("save", () => {
+			editor.addEventListener("save", async () => {
 				button.textContent = editor.fileName;
 				saved.set(editor, true);
 				checkIfReload();
 				if (curProject) {
-					curProject.saveAsm(editor.fileName, editor.string());
+					await curProject.saveAsm(editor.fileName, editor.string());
+					createRegiArea();
 				} else {
 					downloadEditor(editor);
 				}
@@ -366,7 +373,8 @@ function openNewFile() {
 	input.onchange = async () => {
 		if (input.files && input.files.length) {
 			let newEditor: undefined | Editor;
-			for (const file of Array.from(input.files)) {
+
+			const editorList = Array.from(input.files).map(async (file) => {
 				const editor = new Editor(await file.text(), file.name, cons, curProject?.dir);
 				if (curProject) {
 					Editor.editMap.set(`${curProject.name}:/${editor.fileName}`, editor);
@@ -374,11 +382,17 @@ function openNewFile() {
 				}
 				newEditor ||= editor;
 				editors.push(editor);
-			}
+				return editor;
+			});
+			const arr = await Promise.all(editorList);
 			if (newEditor) {
 				focusedEditor = newEditor;
 			}
-			editArea();
+			await editArea();
+
+			if (curProject) {
+				setTimeout(() => arr.forEach((e) => e.save()), 100);
+			}
 		}
 	};
 }
