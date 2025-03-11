@@ -16,8 +16,8 @@ class Directory {
 		this.handle = handle;
 	}
 	static async createHome(): Promise<Directory> {
-		navigator.storage.persist();
 		const home = new Directory(await navigator.storage.getDirectory());
+		//TODO make this if false inform the user
 		navigator.storage.persist().then(console.log);
 		return home;
 	}
