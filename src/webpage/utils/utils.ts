@@ -18,6 +18,7 @@ class Directory {
 	static async createHome(): Promise<Directory> {
 		navigator.storage.persist();
 		const home = new Directory(await navigator.storage.getDirectory());
+		navigator.storage.persist().then(console.log);
 		return home;
 	}
 	async *getAllInDir() {
