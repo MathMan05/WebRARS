@@ -41,6 +41,13 @@
 		"funct3": 0
 	},
 	{
+		"name": "addiw",
+		"type": "I",
+		"args": ["reg", "reg", "12bit"],
+		"opcode": 27,
+		"funct3": 0
+	},
+	{
 		"name": "xori",
 		"type": "I",
 		"args": ["reg", "reg", "12bit"],

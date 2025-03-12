@@ -968,13 +968,17 @@ function assemble(files: [string, string][]) {
 											content: 0b0010011 | (reg << 7) | (Number(numb) << 20),
 										});
 									} else if (numb <= 2147483647n && numb >= -2147483648) {
+										const low = Number(numb) & 0xfff;
 										placeData({
 											type: "instruction",
-											content: 0b0110111 | (reg << 7) | (Number(numb) & 0xfffff000),
+											content:
+												0b0110111 |
+												(reg << 7) |
+												(Number(numb + (low > 2047 ? 2048 : 0)) & 0xfffff000),
 										});
 										placeData({
 											type: "instruction",
-											content: 0b0010011 | (reg << 7) | ((Number(numb) & 0xfff) << 20),
+											content: 0b0011011 | (reg << 7) | (reg << 15) | (low << 20),
 										});
 									}
 									break;

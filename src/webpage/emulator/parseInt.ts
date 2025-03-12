@@ -86,6 +86,7 @@ function parseInt(inst: number) {
 		case 0b0110011:
 			return R();
 		case 0b0010011:
+		case 0b0011011:
 		case 0b0000011:
 		case 0b1100111:
 			return I();

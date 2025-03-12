@@ -300,6 +300,18 @@ class Symstem {
 	}
 	runI(inst: {type: "I"; opcode: number; funct3: number; rd: number; rs1: number; imm: number}) {
 		switch (inst.opcode) {
+			case 0b0011011:
+				switch (inst.funct3) {
+					case 0:
+						const res = (this.intRegis[inst.rs1] + BigInt(inst.imm)) & 0xffffffffn;
+						const out = BigInt(Number(res) >> 0);
+						this.intRegis[inst.rd] = out;
+						break;
+					default:
+						throw new runTimeError(I18n.runTimeErrors.unknownInstruction(inst.opcode + ""));
+				}
+				this.pc += 4;
+				break;
 			case 0b0010011:
 				switch (inst.funct3) {
 					case 0:
