@@ -185,8 +185,10 @@ class Etab {
 	}
 	updateLastUsed() {
 		try {
-			if (this.sys) {
-				const inst = this.sys.ram.getInt32(this.sys.pc);
+			const past = this.csysQue[this.queEnd - 1];
+			if (this.sys && past) {
+				const ram = past.ram.toRam();
+				const inst = ram.getInt32(past.pc);
 				const instruction = parseInt(inst);
 				if ("rd" in instruction) {
 					this.lastRegi = [instruction.rd, false];
