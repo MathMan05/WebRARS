@@ -1,5 +1,5 @@
 import {CSymstem, runTimeError, Symstem} from "../emulator/emulator.js";
-import {toAsm} from "../emulator/parseInt.js";
+import {parseInt, toAsm} from "../emulator/parseInt.js";
 import {registerNames} from "../fetches.js";
 import {I18n} from "../i18n.js";
 
@@ -115,7 +115,9 @@ class Etab {
 		}
 	}
 	htmlRegMap = new WeakMap<HTMLElement, HTMLElement[]>();
+	lastRegi: [number, boolean] = [-1, false];
 	updateRegis() {
+		this.updateLastUsed();
 		const regiArea = document.getElementById("regiArea") as HTMLElement;
 		if (!this.sys) {
 			regiArea.innerHTML = "";
@@ -127,6 +129,14 @@ class Etab {
 			const arr = this.htmlRegMap.get(elm as HTMLElement);
 			if (arr) {
 				for (let i = 0; i < 32; i++) {
+					const parent = arr[i].parentElement;
+					if (parent) {
+						if (!this.lastRegi[1] && this.lastRegi[0] === i) {
+							parent.classList.add("LastUsed");
+						} else {
+							parent.classList.remove("LastUsed");
+						}
+					}
 					arr[i].textContent = "0x" + this.sys.UintRegis[i].toString(16).padStart(16, "0");
 				}
 				return;
@@ -172,6 +182,17 @@ class Etab {
 		this.started = false;
 		this.csysQue = new Array(1000);
 		this.changeButtonStates();
+	}
+	updateLastUsed() {
+		try {
+			if (this.sys) {
+				const inst = this.sys.ram.getInt32(this.sys.pc);
+				const instruction = parseInt(inst);
+				if ("rd" in instruction) {
+					this.lastRegi = [instruction.rd, false];
+				}
+			}
+		} catch {}
 	}
 	async start() {
 		if (this.sys) {

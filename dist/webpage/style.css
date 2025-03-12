@@ -91,6 +91,9 @@ tr:first-child {
 	position: sticky;
 	top: 0;
 }
+.LastUsed {
+	background-color: #d2e08b !important;
+}
 .running {
 	background-color: #d2e08b;
 }
