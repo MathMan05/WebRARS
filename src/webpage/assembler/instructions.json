@@ -333,6 +333,6 @@
 		"name": "b",
 		"type": "fake",
 		"args": ["label"],
-		"replace": "beq x0 x0 %1"
+		"replace": "jal x0 %1"
 	}
 ]
