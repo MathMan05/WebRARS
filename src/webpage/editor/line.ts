@@ -348,13 +348,18 @@ class Line {
 				}
 			} else if (text === "Enter") {
 				strings.push(subString);
+				let spaces = "";
+				const start = this.str.match(/^\s*/gm);
+				if (start) {
+					spaces = start[0];
+				}
 				return {
-					lines: strings.map((_) => new Line(_, this.owner)),
+					lines: strings.map((_, i) => new Line((i ? spaces : "") + _, this.owner)),
 					cursors: strings
 						.map((_, a) => a)
 						.filter((_) => _ !== 0)
 						.map((_) => {
-							return {line: _, index: 0};
+							return {line: _, index: this.length(spaces)};
 						}),
 				};
 			}
