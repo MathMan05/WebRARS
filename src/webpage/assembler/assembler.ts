@@ -135,7 +135,7 @@ function assemble(files: [string, string][]) {
 	const globalLabelMap: labelMap = new Map();
 
 	function link(labelMap: labelMap, dataLables: linkerInfo, globalRun = false) {
-		const ram = new Ram(dataView, textView, [dataIndex, textIndex, 0]);
+		const ram = new Ram(dataView, textView, [dataIndex, textIndex, 1 << 22]);
 
 		for (const [address, thing] of dataLables) {
 			const label = labelMap.get(thing.label);

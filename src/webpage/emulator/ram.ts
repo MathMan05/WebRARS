@@ -16,6 +16,11 @@ class RamStore {
 		const arr = new Uint32Array(view.buffer);
 		return new Uint32Array(arr.slice(0, last + 1).buffer);
 	}
+	trimStart(view: DataView, length: number) {
+		let last = Math.ceil(length / 4);
+		const arr = new Uint32Array(view.buffer);
+		return new Uint32Array(arr.slice(last - 1 - arr.length).buffer);
+	}
 	toRam() {
 		const data = new Uint32Array(new ArrayBuffer(1 << 22));
 		for (const thing in this.data) {
@@ -25,9 +30,9 @@ class RamStore {
 		for (const thing in this.text) {
 			text[thing] = this.text[thing];
 		}
-		const stack = new Uint32Array(new ArrayBuffer(1 << 22));
+		const stack = new Uint32Array(new ArrayBuffer(1 << 16));
 		for (const thing in this.stack) {
-			stack[thing] = this.stack[thing];
+			stack[thing] = this.stack[stack.length - +thing];
 		}
 		return new Ram(
 			new DataView(data.buffer),
@@ -67,7 +72,7 @@ class Ram {
 			}
 			return ["text", val - 0x00400000];
 		} else if (val >= 0x7fffeffc - this.stack.byteLength && val < 0x7fffeffc) {
-			if (!read && val - 0x7fffeffc > this.lengths[2]) {
+			if (!read && val - 0x7fffeffc < this.lengths[2]) {
 				this.lengths[1] = val - 0x7fffeffc;
 			}
 			return ["stack", val - 0x7fffeffc + this.stack.byteLength];
