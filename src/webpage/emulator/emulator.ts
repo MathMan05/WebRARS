@@ -33,7 +33,7 @@ class Symstem {
 	readonly console: Console;
 	done = false;
 	constructor(ram: Ram, console: Console, intRegis = new BigInt64Array(32), pc = 0x00400000) {
-		this.ram = ram;
+		this.ram = ram.compact().toRam();
 		this.console = console;
 		this.intRegis = intRegis;
 		this.UintRegis = new BigUint64Array(intRegis.buffer);
@@ -300,6 +300,14 @@ class Symstem {
 	}
 	runI(inst: {type: "I"; opcode: number; funct3: number; rd: number; rs1: number; imm: number}) {
 		switch (inst.opcode) {
+			case 103:
+				if (inst.funct3 === 0) {
+					this.intRegis[inst.rd] = BigInt(this.pc + 4);
+					this.pc = Number(this.intRegis[inst.rs1]) + inst.imm;
+				} else {
+					throw new runTimeError(I18n.runTimeErrors.unknownInstruction(inst.opcode + ""));
+				}
+				break;
 			case 0b0011011:
 				switch (inst.funct3) {
 					case 0:

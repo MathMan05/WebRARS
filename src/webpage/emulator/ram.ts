@@ -3,10 +3,12 @@ import {runTimeError} from "./emulator.js";
 class RamStore {
 	data: Uint32Array;
 	text: Uint32Array;
-	lengths: [number, number];
+	stack: Uint32Array;
+	lengths: [number, number, number];
 	constructor(ram: Ram) {
 		this.data = this.trimNonZero(ram.data, ram.lengths[0]);
 		this.text = this.trimNonZero(ram.text, ram.lengths[1]);
+		this.stack = this.trimNonZero(ram.stack, ram.lengths[2]);
 		this.lengths = [...ram.lengths];
 	}
 	trimNonZero(view: DataView, length: number) {
@@ -23,20 +25,36 @@ class RamStore {
 		for (const thing in this.text) {
 			text[thing] = this.text[thing];
 		}
-		return new Ram(new DataView(data.buffer), new DataView(text.buffer), [...this.lengths]);
+		const stack = new Uint32Array(new ArrayBuffer(1 << 22));
+		for (const thing in this.stack) {
+			stack[thing] = this.stack[thing];
+		}
+		return new Ram(
+			new DataView(data.buffer),
+			new DataView(text.buffer),
+			[...this.lengths],
+			new DataView(stack.buffer),
+		);
 	}
 }
 class Ram {
 	data: DataView;
 	text: DataView;
-	lengths: [number, number];
-	constructor(data: DataView, text: DataView, lengths: [number, number]) {
+	stack: DataView;
+	lengths: [number, number, number];
+	constructor(
+		data: DataView,
+		text: DataView,
+		lengths: [number, number, number],
+		stack = new DataView(new ArrayBuffer()),
+	) {
 		this.data = data;
 		this.text = text;
 		this.lengths = lengths;
+		this.stack = stack;
 		data.getInt32;
 	}
-	readFrom(val: number | bigint, read = true): ["data" | "text", number] {
+	readFrom(val: number | bigint, read = true): ["data" | "text" | "stack", number] {
 		val = Number(val);
 		if (val >= 0x10010000 && val < 0x10010000 + this.data.byteLength) {
 			if (!read && val - 0x10010000 > this.lengths[0]) {
@@ -48,6 +66,11 @@ class Ram {
 				this.lengths[1] = val - 0x00400000;
 			}
 			return ["text", val - 0x00400000];
+		} else if (val >= 0x7fffeffc - this.stack.byteLength && val < 0x7fffeffc) {
+			if (!read && val - 0x7fffeffc > this.lengths[2]) {
+				this.lengths[1] = val - 0x7fffeffc;
+			}
+			return ["stack", val - 0x7fffeffc + this.stack.byteLength];
 		} else {
 			if (read) {
 				throw new runTimeError(I18n.runTimeErrors.outOfBoundsRead(val.toString(16)));
