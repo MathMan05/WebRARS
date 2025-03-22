@@ -950,13 +950,12 @@ class Editor extends EventTarget {
 				const [ram, pc] = assemble(build);
 				emu = new Symstem(ram, this.console);
 				emu.pc = pc;
-				emu.intRegis[2] = 0x7fffeffcn;
 			} else {
 				const [ram, pc] = assemble([[this.string(), this.fileDir || this.fileName]]);
 				emu = new Symstem(ram, this.console);
 				emu.pc = pc;
-				emu.intRegis[2] = 0x7fffeffcn;
 			}
+			emu.intRegis[2] = 0x7fffeffcn;
 			this.console.addMessage("\n" + I18n.finishedAssembly() + "\n\n");
 			this.dispatchEvent(new AssembleEvent("Assemble", emu));
 		} catch (e) {

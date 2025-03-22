@@ -69,6 +69,7 @@ class Etab {
 		this.updateRegis();
 	}
 	handSystem(sys: Symstem) {
+		this.csysQue = new Array(1000);
 		this.sys = sys;
 		this.csys = sys.compact();
 	}
