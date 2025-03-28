@@ -138,13 +138,18 @@ class Editor extends EventTarget {
 						startx = widthNeeded + 10;
 					}
 					const endline = this.lines[i];
+					const maxWidth = widthNeeded + 10 + endline.length() * charWidth;
 					if (h[1].line === i) {
 						endx = widthNeeded + 10 + endline.moveCursor(h[1].index, 0) * charWidth;
 					} else {
-						endx = widthNeeded + 10 + endline.length() * charWidth;
+						endx = maxWidth;
+					}
+					if (endx === maxWidth) {
+						endx += 3;
 					}
 					endx -= startx;
 					const y = (i - linedown) * fontSize;
+
 					ctx.fillRect(startx, y, endx, fontSize);
 				}
 			}
