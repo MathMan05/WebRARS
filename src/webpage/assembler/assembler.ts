@@ -96,8 +96,8 @@ type symbolType =
 			content: number;
 	  };
 class AssemblError extends Error {
-	readonly line: number;
-	readonly file: string;
+	line: number;
+	file: string;
 	trace: [number, string][] = [];
 	constructor(reason: string, line: number, file: string) {
 		super(reason);
@@ -105,6 +105,11 @@ class AssemblError extends Error {
 		this.file = file;
 	}
 	addTrace(line: number, file: string) {
+		if (isNaN(this.line)) {
+			this.line = line;
+			this.file = file;
+			return;
+		}
 		this.trace.push([line, file]);
 	}
 }
@@ -134,7 +139,7 @@ function assemble(files: [string, string][]) {
 	const globalDataLabels: linkerInfo = new Map();
 	const globalLabelMap: labelMap = new Map();
 
-	function link(labelMap: labelMap, dataLables: linkerInfo, globalRun = false) {
+	function link(labelMap: labelMap, dataLables: linkerInfo, globalRun = false, macro = false) {
 		const ram = new Ram(dataView, textView, [dataIndex, textIndex, 1 << 22]);
 
 		for (const [address, thing] of dataLables) {
@@ -147,11 +152,14 @@ function assemble(files: [string, string][]) {
 						thing.line,
 						thing.file,
 					);
-				} else {
+				} else if (!macro) {
 					globalDataLabels.set(address, thing);
+					continue;
+				} else {
 					continue;
 				}
 			}
+			dataLables.delete(address);
 			switch (thing.type) {
 				case "byte":
 					ram.setInt8(address, label);
@@ -228,6 +236,7 @@ function assemble(files: [string, string][]) {
 		return ram;
 	}
 	for (const [code, file] of files) {
+		console.log(files);
 		function getCurAddress() {
 			if (place == "data") {
 				return dataIndex + 0x10010000;
@@ -252,7 +261,9 @@ function assemble(files: [string, string][]) {
 			varMap = new Map<string, symbolType>(),
 			macros = new Map<string, macro>(),
 			i = 0,
+			macro = false,
 		) {
+			console.trace("test");
 			let macroBuild: macro | undefined;
 			function placeData(
 				data:
@@ -917,14 +928,19 @@ function assemble(files: [string, string][]) {
 								const sdirective = directive;
 								const splace = place;
 								try {
+									const dataLables2: linkerInfo = new Map();
 									assembleParsed(
 										macro.lines,
-										new Map(dataLables),
-										new Map(labelMap),
+										dataLables2,
+										new Map(),
 										argMap,
-										new Map(macros),
+										new Map(),
 										macro.line,
+										true,
 									);
+									for (const thing of dataLables2) {
+										dataLables.set(...thing);
+									}
 								} catch (e) {
 									if (e instanceof AssemblError) {
 										e.addTrace(i, file);
@@ -1048,6 +1064,7 @@ function assemble(files: [string, string][]) {
 										argMap,
 										new Map(macros),
 										macro.line,
+										true,
 									);
 								} catch (e) {
 									if (e instanceof AssemblError) {
@@ -1089,17 +1106,24 @@ function assemble(files: [string, string][]) {
 				}
 				i++;
 			}
-			for (const [thing, line] of globalLabelSet) {
+			for (const arr of globalLabelSet) {
+				const [thing] = arr;
 				const label = labelMap.get(thing);
 				if (!label) {
-					throw new AssemblError(I18n.errors.unmatchedLabel(line + 1 + "", thing), line, file);
+					continue;
 				}
 				globalLabelMap.set(thing, label);
+				globalLabelSet.delete(arr);
 			}
-			link(labelMap, dataLables);
+			link(labelMap, dataLables, false, macro);
 		}
 		assembleParsed(basicParsing);
+		for (const [thing, line] of globalLabelSet) {
+			throw new AssemblError(I18n.errors.unmatchedLabel(line + 1 + "", thing), line, file);
+		}
 	}
+
+	console.warn("global linking");
 	const ram = link(globalLabelMap, globalDataLabels, true);
 	const main = globalLabelMap.get("main");
 	return [ram, main || 0x00400000] as [Ram, number];

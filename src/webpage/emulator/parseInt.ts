@@ -180,7 +180,7 @@ function toAsm(numb: number) {
 			}
 			const strImm =
 				parse.imm < 0 ? `-0x${Math.abs(parse.imm).toString(16)}` : `0x${parse.imm.toString(16)}`;
-			return `${name} ${toRegiName(parse.rs1, args[0])},${strImm}(${toRegiName(parse.rs2, false)})`;
+			return `${name} ${toRegiName(parse.rs2, args[0])},${strImm}(${toRegiName(parse.rs1, false)})`;
 		}
 		case "B": {
 			const inst = instFilter.find(

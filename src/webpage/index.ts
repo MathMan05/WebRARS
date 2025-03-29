@@ -268,6 +268,7 @@ async function editArea() {
 			});
 			editor.addEventListener("Assemble", async (e) => {
 				if (e.sys instanceof AssemblError) {
+					console.error(e.sys);
 					if (e.sys.file === (editor.fileDir || editor.fileName)) {
 						button.click();
 						try {

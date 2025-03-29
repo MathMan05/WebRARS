@@ -202,6 +202,7 @@ class Symstem {
 						this.ram.setInt32(this.intRegis[inst.rs1] + BigInt(inst.imm), this.intRegis[inst.rs2]);
 						break;
 					case 0x3:
+						console.log(inst.rs1, inst.rs2);
 						this.ram.setBigInt64(
 							this.intRegis[inst.rs1] + BigInt(inst.imm),
 							this.intRegis[inst.rs2],
