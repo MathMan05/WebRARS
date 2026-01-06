@@ -336,6 +336,7 @@ class Etab {
 					elm = this.htmlMap.get(this.sys.pc);
 					if (elm && !sys.done) {
 						elm.classList.add("running");
+						elm.scrollIntoView({behavior: "instant", block: "center"});
 					}
 					this.updateRegis();
 				}
