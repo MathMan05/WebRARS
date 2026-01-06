@@ -402,12 +402,39 @@ class Etab {
 			tr.append(address);
 			for (let cell = 0; cell < 8; cell++) {
 				const cellHTML = document.createElement("td");
+				cellHTML.onclick = () => {
+					if (cellHTML.children.length) {
+						return;
+					}
+					const val = cellHTML.textContent || "";
+					cellHTML.textContent = "";
+					const input = document.createElement("input");
+					input.value = val;
+					cellHTML.append(input);
+					input.focus();
+					input.onkeydown = (e) => {
+						if (e.key === "Enter") {
+							input.blur();
+						}
+					};
+					input.onblur = () => {
+						this.write32(addr, globalThis.parseInt(input.value));
+						this.updateMemCell(addr, false);
+					};
+				};
 				const addr = offset + cell * 4;
 				this.memMap.set(addr, cellHTML);
 				this.updateMemCell(addr, false);
 				tr.append(cellHTML);
 			}
 			table.append(tr);
+		}
+	}
+	write32(addr: number, numb: number) {
+		try {
+			this.sys?.ram.setInt32(addr, numb);
+		} catch {
+			return;
 		}
 	}
 	get32MemOr0(addr: number) {

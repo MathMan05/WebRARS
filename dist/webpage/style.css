@@ -68,6 +68,9 @@ body {
 	flex-shrink: 1;
 	min-height: 0;
 	border: 2px solid rgb(140 140 140);
+	table{
+		table-layout: fixed;
+	}
 }
 table {
 	font-size: 10px;
@@ -179,6 +182,13 @@ tr:nth-of-type(even) {
 .memView{
 	flex-shrink:1;
 	min-height:0;
+}
+.memView input{
+	background:transparent;
+	border:none;
+	font-size: 10px;
+	min-width: 100%;
+	max-width: 100%;
 }
 .controls{
 	flex-shrink:0;
