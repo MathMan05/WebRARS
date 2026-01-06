@@ -122,12 +122,18 @@ type linkerInfo = Map<
 		file: string;
 	}
 >;
-type macro = {
-	name: string;
-	args: string[];
-	lines: parsedPart[][];
-	line: number;
-};
+type macro =
+	| {
+			name: string;
+			args: string[];
+			lines: parsedPart[][];
+			line: number;
+	  }
+	| {
+			name: string;
+			parts: parsedPart[];
+			line: number;
+	  };
 type labelMap = Map<string, number>;
 function assemble(files: [string, string][]) {
 	const textView = new DataView(new ArrayBuffer(1 << 22));
@@ -376,7 +382,7 @@ function assemble(files: [string, string][]) {
 			for (const line of basicParsing) {
 				let s = 0;
 				const lineArr = [...line];
-				if (macroBuild) {
+				if (macroBuild && "lines" in macroBuild) {
 					if (
 						lineArr.length === 1 &&
 						lineArr[0].type == "directive" &&
@@ -459,6 +465,24 @@ function assemble(files: [string, string][]) {
 								line: i + 1,
 							};
 							break;
+						case "eqv": {
+							const name = getNextSymbol();
+							if (!name || name.type !== "unknown") {
+								throw new AssemblError(I18n.errors.eqvName(i + 1 + "", data.content), i, file);
+							}
+							const parts: parsedPart[] = lineArr;
+							parts.shift();
+							parts.shift();
+							parts.shift();
+
+							macros.set(name.content, {
+								name: name.content,
+								line: i + 1,
+								parts,
+							});
+							s = Infinity;
+							break;
+						}
 						default:
 							throw new AssemblError(
 								I18n.errors.unknownDirective(i + 1 + "", data.content),
@@ -544,9 +568,10 @@ function assemble(files: [string, string][]) {
 					} else if (symbol.type === "label") {
 						const arr = [...symbol.content];
 						arr.pop();
+						const name = arr.join("");
 						return {
 							type: "label",
-							content: arr.join(""),
+							content: name,
 						};
 					} else if (symbol.type === "directive") {
 						const arr = [...symbol.content];
@@ -576,6 +601,14 @@ function assemble(files: [string, string][]) {
 							type: "variable",
 							content,
 						};
+					} else if (symbol.type === "unknown") {
+						const m = macros.get(symbol.content);
+						if (symbol.content === "test2") {
+						}
+						if (m && !("lines" in m)) {
+							lineArr.splice(s, 0, ...m.parts);
+							return getNextSymbol(helper);
+						}
 					}
 					return {
 						type: symbol.type,
@@ -1031,6 +1064,10 @@ function assemble(files: [string, string][]) {
 						case "unknown":
 							const macro = macros.get(sym.content);
 							if (macro) {
+								if (!("lines" in macro)) {
+									return;
+								}
+
 								let argBuild: symbolType[] = [];
 								let thing = getNextSymbol();
 								if (thing) {
@@ -1043,6 +1080,7 @@ function assemble(files: [string, string][]) {
 										}
 									}
 								}
+
 								if (argBuild.length !== macro.args.length) {
 									if (argBuild.length > macro.args.length) {
 										throw new AssemblError(

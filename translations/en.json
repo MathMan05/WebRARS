@@ -64,6 +64,7 @@
 		"unmatchedGlobal": "Global does not match any definition in the file on line $1, exiting",
 		"macroName": "Macro expected name on line $1 but did not get a name, exiting.",
 		"macroArgs": "Macro expected arguments in parentheses on line $1 but got something else instead, exiting.",
+		"eqvName": "Eqv expected arguments in parentheses on line $1 but got something else instead, exiting.",
 		"tooManyArgumentsMacro": "Macro on line $1 got too many arguments, expected $2 got $3",
 		"tooFewArgumentsMacro": "Macro on line $1 got too few arguments, expected $2 got $3"
 	},
