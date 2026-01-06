@@ -72,7 +72,7 @@ function parseInt(inst: number) {
 			type: "U" as "U",
 			opcode,
 			rd,
-			imm: (inst & 0xfffff000) >> 12,
+			imm: inst & 0xfffff000,
 		};
 	}
 	function W() {
@@ -203,7 +203,9 @@ function toAsm(numb: number) {
 				name = inst.name;
 			}
 			const strImm =
-				parse.imm < 0 ? `-0x${Math.abs(parse.imm).toString(16)}` : `0x${parse.imm.toString(16)}`;
+				parse.imm < 0
+					? `-0x${Math.abs(parse.imm >> 12).toString(16)}`
+					: `0x${(parse.imm >> 12).toString(16)}`;
 
 			return `${name} ${toRegiName(parse.rd, false)} ${strImm}`;
 		}
