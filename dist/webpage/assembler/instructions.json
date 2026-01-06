@@ -334,5 +334,11 @@
 		"type": "fake",
 		"args": ["label"],
 		"replace": "jal x0 %1"
+	},
+	{
+		"name": "j",
+		"type": "fake",
+		"args": ["label"],
+		"replace": "jal x0 %1"
 	}
 ]
