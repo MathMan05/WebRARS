@@ -54,7 +54,7 @@ type instructionType =
 	| {
 			name: string;
 			type: "J";
-			args: ["reg", "label"];
+			args: ["oreg", "label"];
 			opcode: number;
 	  }
 	| {

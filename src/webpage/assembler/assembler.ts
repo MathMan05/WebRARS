@@ -468,6 +468,10 @@ function assemble(files: [string, string][]) {
 					}
 				}
 
+				const putBack = () => {
+					s--;
+				};
+
 				const helperNext = (itterate = true) => {
 					return lineArr[(s += +itterate) - +itterate];
 				};
@@ -616,6 +620,19 @@ function assemble(files: [string, string][]) {
 							);
 						}
 						return Number(sym.content);
+					}
+					function getRegiOr0(float = false) {
+						const sym = getNextSymbol();
+						if (!sym || sym.type !== "register") {
+							putBack();
+							return 0;
+						}
+						if (!float && sym.floating) {
+							throw new AssemblError(I18n.errors.expectIntReg(i + 1 + ""), i, file);
+						} else if (float && !sym.floating) {
+							throw new AssemblError(I18n.errors.expectFloatReg(i + 1 + ""), i, file);
+						}
+						return sym.number;
 					}
 					function getRegi(float = false) {
 						const sym = getNextSymbol();
@@ -818,7 +835,7 @@ function assemble(files: [string, string][]) {
 							break;
 						}
 						case "J": {
-							const lay = info.opcode | (getRegi() << 7);
+							const lay = info.opcode | (getRegiOr0() << 7);
 							placeData({
 								type: "instruction",
 								content: lay,

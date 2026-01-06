@@ -313,7 +313,7 @@
 	{
 		"name": "jal",
 		"type": "J",
-		"args": ["offreg"],
+		"args": ["oreg","label"],
 		"opcode": 111
 	},
 	{
