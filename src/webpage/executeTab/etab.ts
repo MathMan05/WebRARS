@@ -280,12 +280,13 @@ class Etab {
 							await this.waitStep();
 						} else {
 							this.enque();
-							if (!(await sys.step())) {
-								break;
-							}
 							if (i >= 1000) {
 								i = 0;
 								await new Promise((res) => setTimeout(res, 10));
+							}
+							i++;
+							if (!(await sys.step())) {
+								break;
 							}
 						}
 					} while (!this.stopped);
