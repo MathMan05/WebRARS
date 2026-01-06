@@ -92,6 +92,8 @@
 		"text":"$1 (.text)",
 		"stack":"$1 (stack)"
 	},
+	"speed":"Run speed $1 inst/sec",
+	"speedMax":"Run at max speed",
 	"project": {
 		"name": "Project name:",
 		"pleaseEnterName": "You may not leave the name black, please enter a name",

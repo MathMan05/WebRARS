@@ -42,6 +42,40 @@ class Etab {
 				this.backStep();
 			}
 		};
+
+		const speed = document.getElementById("speed") as HTMLInputElement;
+		const speedTag = document.getElementById("speedTag") as HTMLSpanElement;
+		const updateSpeed = () => {
+			let calcSpeed: number;
+			const r = +speed.value;
+			if (r === 0) {
+				calcSpeed = 0.05;
+			} else if (r <= 12) {
+				calcSpeed = r / 24;
+			} else if (r < 98) {
+				calcSpeed = (r - 9.4) / 2.6;
+			} else {
+				calcSpeed = 0;
+			}
+			if (calcSpeed === 0) {
+				speedTag.textContent = I18n.speedMax();
+			} else if (calcSpeed < 0.1) {
+				speedTag.textContent = I18n.speed(Math.round(calcSpeed * 100) / 100 + "");
+			} else if (calcSpeed < 1) {
+				speedTag.textContent = I18n.speed(Math.round(calcSpeed * 10) / 10 + "");
+			} else {
+				speedTag.textContent = I18n.speed(Math.round(calcSpeed) + "");
+			}
+			if (calcSpeed) {
+				this.wait = 1000 / calcSpeed;
+			} else {
+				this.wait = 0;
+			}
+		};
+		updateSpeed();
+		speed.oninput = () => {
+			updateSpeed();
+		};
 	}
 	enque() {
 		if (this.sys) {
@@ -211,6 +245,22 @@ class Etab {
 			}
 		} catch {}
 	}
+	wait = 100;
+	async waitStep() {
+		if (this.wait < 250) {
+			await new Promise((res) => setTimeout(res, this.wait));
+			return;
+		}
+		const time = performance.now();
+		while (true) {
+			await new Promise((res) => setTimeout(res, 100));
+			const timeLeft = this.wait - (performance.now() - time);
+			if (timeLeft < 250) {
+				await new Promise((res) => setTimeout(res, timeLeft));
+				return;
+			}
+		}
+	}
 	async start() {
 		if (this.sys) {
 			if (this.running) await this.running;
@@ -222,9 +272,23 @@ class Etab {
 					elm.classList.remove("running");
 				}
 				try {
+					let i = 0;
 					do {
-						this.enque();
-					} while ((await sys.step()) && !this.stopped);
+						if (this.wait) {
+							await this.step(true);
+							console.log("waitStep");
+							await this.waitStep();
+						} else {
+							this.enque();
+							if (!(await sys.step())) {
+								break;
+							}
+							if (i >= 1000) {
+								i = 0;
+								await new Promise((res) => setTimeout(res, 10));
+							}
+						}
+					} while (!this.stopped);
 				} catch (e) {
 					if (e instanceof runTimeError) {
 						sys.console.addIO(e.message, true);
@@ -243,35 +307,42 @@ class Etab {
 			});
 		}
 	}
-	async step() {
+	async step(effectStopped = false) {
 		if (this.running) return await this.running;
 		this.running = new Promise<void>(async (res) => {
-			if (this.sys) {
-				let elm = this.htmlMap.get(this.sys.pc);
-				if (elm) {
-					elm.classList.remove("running");
-				}
-
-				this.enque();
-				const sys = this.sys;
-				try {
-					await sys.step();
-				} catch (e) {
-					if (e instanceof runTimeError) {
-						sys.console.addIO(e.message, true);
-					} else {
-						console.error(e);
+			try {
+				if (this.sys) {
+					let elm = this.htmlMap.get(this.sys.pc);
+					if (elm) {
+						elm.classList.remove("running");
 					}
+
+					this.enque();
+					const sys = this.sys;
+					try {
+						if (effectStopped) {
+							this.stopped ||= !(await sys.step());
+						} else {
+							await sys.step();
+						}
+					} catch (e) {
+						if (e instanceof runTimeError) {
+							sys.console.addIO(e.message, true);
+						} else {
+							console.error(e);
+						}
+					}
+					elm = this.htmlMap.get(this.sys.pc);
+					if (elm && !sys.done) {
+						elm.classList.add("running");
+					}
+					this.updateRegis();
 				}
-				elm = this.htmlMap.get(this.sys.pc);
-				if (elm && !sys.done) {
-					elm.classList.add("running");
-				}
-				this.updateRegis();
+				this.changeButtonStates();
+				this.running = undefined;
+			} catch (e) {
+				res();
 			}
-			res();
-			this.changeButtonStates();
-			this.running = undefined;
 		});
 	}
 	createHTML() {

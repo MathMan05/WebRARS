@@ -8,6 +8,9 @@ body {
 	overflow: hidden; /* avoid "bounce" */
 	-webkit-text-size-adjust: 100%;
 }
+.speedDiv{
+	width:200px;
+}
 #regiArea {
 	flex-shrink: 0;
 	flex-grow: 1;
