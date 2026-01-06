@@ -72,7 +72,7 @@ function parseInt(inst: number) {
 			type: "U" as "U",
 			opcode,
 			rd,
-			imm: inst & 0xfffff000,
+			imm: (inst & 0xfffff000) >> 12,
 		};
 	}
 	function W() {
