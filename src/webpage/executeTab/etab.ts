@@ -340,16 +340,36 @@ class Etab {
 			const left = document.createElement("button");
 			left.textContent = "⬅";
 			left.onclick = () => {
-				this.memAddr -= 0x100;
+				this.memAddr -= 0x200;
 				this.regenMemTable();
 			};
 			const right = document.createElement("button");
 			right.textContent = "➡";
 			right.onclick = () => {
-				this.memAddr += 0x100;
+				this.memAddr += 0x200;
 				this.regenMemTable();
 			};
-			controls.append(left, right);
+
+			const sel = document.createElement("select");
+
+			const places = {
+				data: 0x10010000,
+				stack: 0x7fffeffc - 8 * 4 * 16,
+				text: 0x00400000,
+			} as const;
+			for (const [place, addr] of Object.entries(places)) {
+				const p = place as keyof typeof places;
+				const option = document.createElement("option");
+				option.textContent = I18n.memPlaces[p]("0x" + addr.toString(16).padStart(8, "0"));
+				option.value = place;
+				sel.append(option);
+			}
+			sel.onchange = () => {
+				this.memAddr = places[sel.value as keyof typeof places];
+				this.regenMemTable();
+			};
+
+			controls.append(left, right, sel);
 
 			bigElm.append(controls);
 		}
@@ -390,11 +410,18 @@ class Etab {
 			table.append(tr);
 		}
 	}
+	get32MemOr0(addr: number) {
+		try {
+			return this.sys?.ram.getUint32(addr) || 0;
+		} catch {
+			return 0;
+		}
+	}
 	lastCell?: HTMLElement;
 	updateMemCell(addr: number, highlight = true) {
 		const cell = this.memMap.get(addr);
 		if (!cell) return;
-		cell.textContent = `0x${this.sys?.ram.getUint32(addr).toString(16).padStart(8, "0")}`;
+		cell.textContent = `0x${this.get32MemOr0(addr).toString(16).padStart(8, "0")}`;
 		if (highlight) {
 			this.lastCell?.classList.remove("LastUsed");
 			cell.classList.add("LastUsed");
