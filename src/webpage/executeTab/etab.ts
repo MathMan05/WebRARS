@@ -60,6 +60,7 @@ class Etab {
 		this.queEnd %= 1000;
 		if (back) {
 			this.sys = back.unCompact();
+			this.systemReg();
 		}
 		elm = this.htmlMap.get(this.sys?.pc as number);
 		if (elm && this.sys && !this.sys.done) {
@@ -67,11 +68,21 @@ class Etab {
 		}
 		this.changeButtonStates();
 		this.updateRegis();
+		for (const addr of this.memMap.keys()) {
+			this.updateMemCell(addr, false);
+		}
 	}
 	handSystem(sys: Symstem) {
 		this.csysQue = new Array(1000);
 		this.sys = sys;
+		this.systemReg();
 		this.csys = sys.compact();
+	}
+	systemReg() {
+		if (!this.sys) return;
+		this.sys.setMem = (addr) => {
+			this.updateMemCell(addr);
+		};
 	}
 	async reset() {
 		if (!this.csys) return;
@@ -81,6 +92,7 @@ class Etab {
 		}
 
 		this.sys = this.csys.unCompact();
+		this.systemReg();
 		elm = this.htmlMap.get(this.sys.pc);
 		if (elm && !this.sys.done) {
 			elm.classList.add("running");
@@ -88,6 +100,8 @@ class Etab {
 		this.csysQue = new Array(1000);
 		this.changeButtonStates();
 		this.updateRegis();
+
+		this.regenMemTable();
 	}
 	changeButtonStates() {
 		const start = document.getElementById("start") as HTMLButtonElement;
@@ -265,10 +279,11 @@ class Etab {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "dontgrow");
 		const scrollTable = document.createElement("div");
+		scrollTable.classList.add("scrollTable");
 		const table = document.createElement("table");
 		scrollTable.append(table);
 		div.append(scrollTable);
-		scrollTable.classList.add("scrollTable");
+
 		const tr = document.createElement("tr");
 		const address = document.createElement("th");
 		address.textContent = I18n.address();
@@ -307,7 +322,84 @@ class Etab {
 			}
 		}
 		this.updateRegis();
+		{
+			const bigElm = document.createElement("div");
+			bigElm.classList.add("flexttb", "memView");
+			const scrollTable = document.createElement("div");
+			scrollTable.classList.add("scrollTable");
+			const memoryTable = document.createElement("table");
+			this.regenMemTable(memoryTable);
+			scrollTable.append(memoryTable);
+			this.curMemTable = memoryTable;
+			bigElm.append(scrollTable);
+			div.append(bigElm);
+
+			const controls = document.createElement("div");
+			controls.classList.add("flexltr", "controls");
+
+			const left = document.createElement("button");
+			left.textContent = "⬅";
+			left.onclick = () => {
+				this.memAddr -= 0x100;
+				this.regenMemTable();
+			};
+			const right = document.createElement("button");
+			right.textContent = "➡";
+			right.onclick = () => {
+				this.memAddr += 0x100;
+				this.regenMemTable();
+			};
+			controls.append(left, right);
+
+			bigElm.append(controls);
+		}
 		return div;
+	}
+	memAddr = 0x10010000;
+	memMap = new Map<number, HTMLElement>();
+	curMemTable?: HTMLTableElement;
+	regenMemTable(table: HTMLTableElement | undefined = this.curMemTable) {
+		if (!table) return;
+		table.innerHTML = "";
+		this.memMap = new Map<number, HTMLElement>();
+		const tr = document.createElement("tr");
+		const address = document.createElement("th");
+		address.textContent = I18n.address();
+		tr.append(address);
+
+		for (let i = 0; i < 8; i++) {
+			const heads = document.createElement("th");
+			heads.textContent = I18n.memvalue((i * 4).toString(16));
+			tr.append(heads);
+		}
+		table.append(tr);
+
+		for (let row = 0; row < 16; row++) {
+			const tr = document.createElement("tr");
+			const offset = this.memAddr + row * 8 * 4;
+			const address = document.createElement("th");
+			address.textContent = "0x" + offset.toString(16);
+			tr.append(address);
+			for (let cell = 0; cell < 8; cell++) {
+				const cellHTML = document.createElement("td");
+				const addr = offset + cell * 4;
+				this.memMap.set(addr, cellHTML);
+				this.updateMemCell(addr, false);
+				tr.append(cellHTML);
+			}
+			table.append(tr);
+		}
+	}
+	lastCell?: HTMLElement;
+	updateMemCell(addr: number, highlight = true) {
+		const cell = this.memMap.get(addr);
+		if (!cell) return;
+		cell.textContent = `0x${this.sys?.ram.getUint32(addr).toString(16).padStart(8, "0")}`;
+		if (highlight) {
+			this.lastCell?.classList.remove("LastUsed");
+			cell.classList.add("LastUsed");
+			this.lastCell = cell;
+		}
 	}
 }
 export {Etab};

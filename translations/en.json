@@ -80,6 +80,7 @@
 	"runio": "Run I/O",
 	"programDone": "--- The program has finished running ($1) ----",
 	"address": "Address",
+	"memvalue":"Value (+$1)",
 	"code": "Code",
 	"basic": "Basic",
 	"startScreen": "Open a file or start a project!",

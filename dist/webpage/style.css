@@ -176,7 +176,18 @@ tr:nth-of-type(even) {
 	display: flex;
 	flex-direction: column;
 }
-
+.memView{
+	flex-shrink:1;
+	min-height:0;
+}
+.controls{
+	flex-shrink:0;
+	display:flex;
+	justify-content: center;
+	gap: 4px;
+	padding: 4px 0px;
+	background: lightgray;
+}
 .start {
 	display: flex;
 	align-items: center;

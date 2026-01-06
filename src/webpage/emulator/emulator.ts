@@ -188,30 +188,30 @@ class Symstem {
 				return;
 		}
 	}
+	setMem = (_addr: number) => {};
 	runS(inst: {type: "S"; opcode: number; funct3: number; rs1: number; rs2: number; imm: number}) {
+		const addr = this.intRegis[inst.rs1] + BigInt(inst.imm);
 		switch (inst.opcode) {
 			case 0b0100011:
 				switch (inst.funct3) {
 					case 0x0:
-						this.ram.setInt8(this.intRegis[inst.rs1] + BigInt(inst.imm), this.intRegis[inst.rs2]);
+						this.ram.setInt8(addr, this.intRegis[inst.rs2]);
 						break;
 					case 0x1:
-						this.ram.setInt16(this.intRegis[inst.rs1] + BigInt(inst.imm), this.intRegis[inst.rs2]);
+						this.ram.setInt16(addr, this.intRegis[inst.rs2]);
 						break;
 					case 0x2:
-						this.ram.setInt32(this.intRegis[inst.rs1] + BigInt(inst.imm), this.intRegis[inst.rs2]);
+						this.ram.setInt32(addr, this.intRegis[inst.rs2]);
 						break;
 					case 0x3:
 						console.log(inst.rs1, inst.rs2);
-						this.ram.setBigInt64(
-							this.intRegis[inst.rs1] + BigInt(inst.imm),
-							this.intRegis[inst.rs2],
-						);
+						this.ram.setBigInt64(addr, this.intRegis[inst.rs2]);
 						break;
 					default:
 						throw new runTimeError(I18n.runTimeErrors.unknownInstruction(inst.opcode + ""));
 				}
 				this.pc += 4;
+				this.setMem(Number(addr));
 				return;
 			default:
 				throw new runTimeError(I18n.runTimeErrors.unknownInstruction(inst.opcode + ""));
