@@ -324,8 +324,9 @@ class Etab {
 					elm.classList.add("running");
 				}
 				res();
-				this.changeButtonStates();
 				this.running = undefined;
+				this.stopped = true;
+				this.changeButtonStates();
 			});
 		}
 	}
