@@ -14,6 +14,7 @@ class Etab {
 	htmlMap = new Map<number, HTMLElement>();
 	constructor() {
 		const start = document.getElementById("start") as HTMLElement;
+		const stop = document.getElementById("stop") as HTMLElement;
 		const step = document.getElementById("step") as HTMLElement;
 		const reset = document.getElementById("reset") as HTMLElement;
 		const backStep = document.getElementById("backStep") as HTMLElement;
@@ -22,9 +23,15 @@ class Etab {
 		step.classList.add("disabled");
 		reset.classList.add("disabled");
 		backStep.classList.add("disabled");
+		stop.classList.add("disabled");
 		start.onclick = () => {
 			if (!start.classList.contains("disabled")) {
 				this.start();
+			}
+		};
+		stop.onclick = () => {
+			if (!stop.classList.contains("disabled")) {
+				this.stop();
 			}
 		};
 		reset.onclick = () => {
@@ -76,6 +83,10 @@ class Etab {
 		speed.oninput = () => {
 			updateSpeed();
 		};
+	}
+	stop() {
+		this.stopped = true;
+		this.changeButtonStates();
 	}
 	enque() {
 		if (this.sys) {
@@ -142,6 +153,16 @@ class Etab {
 		const step = document.getElementById("step") as HTMLButtonElement;
 		const reset = document.getElementById("reset") as HTMLButtonElement;
 		const backStep = document.getElementById("backStep") as HTMLElement;
+		const stop = document.getElementById("stop") as HTMLElement;
+		if (!this.stopped) {
+			start.classList.add("disabled");
+			step.classList.add("disabled");
+			reset.classList.add("disabled");
+			backStep.classList.add("disabled");
+			stop.classList.remove("disabled");
+			return;
+		}
+		stop.classList.add("disabled");
 		if (this.sys) {
 			reset.classList.remove("disabled");
 			if (this.sys.done) {
