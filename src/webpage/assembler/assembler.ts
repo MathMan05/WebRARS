@@ -470,10 +470,8 @@ function assemble(files: [string, string][]) {
 							if (!name || name.type !== "unknown") {
 								throw new AssemblError(I18n.errors.eqvName(i + 1 + "", data.content), i, file);
 							}
-							const parts: parsedPart[] = lineArr;
-							parts.shift();
-							parts.shift();
-							parts.shift();
+							const parts: parsedPart[] = lineArr.slice(s);
+							console.log(parts);
 
 							macros.set(name.content, {
 								name: name.content,
