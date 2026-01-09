@@ -68,8 +68,8 @@ type instructionType =
 			type: "reallyfake";
 	  };
 
-const instructions = (await (
-	await fetch("./assembler/instructions.json")
-).json()) as instructionType[];
+const instructions = (
+	(await (await fetch("./assembler/instructions.json")).json()) as instructionType[]
+).sort((a, b) => (a.name < b.name ? -1 : 1));
 
 export {registerNames, instructions};

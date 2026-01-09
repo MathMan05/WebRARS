@@ -3,6 +3,7 @@ import {Contextmenu} from "./contextMenu.js";
 import {Editor} from "./editor/editor.js";
 import {Console} from "./emulator/console.js";
 import {Etab} from "./executeTab/etab.js";
+import {instructions} from "./fetches.js";
 import {I18n} from "./i18n.js";
 import {Project} from "./projects/project.js";
 import {ProjFiles} from "./projects/projectFiles.js";
@@ -139,6 +140,146 @@ const runButton = document.createElement("button");
 runButton.textContent = I18n.run.run();
 actionRow.append(runButton);
 menu.bindContextmenu(runButton, undefined, undefined, true);
+
+const helpMenu = new Contextmenu("help");
+
+helpMenu.addButton(
+	() => I18n.help.help(),
+	() => {
+		const menu = document.createElement("dialog");
+		document.body.append(menu);
+
+		const title = document.createElement("h2");
+		title.textContent = I18n.help.webhelp();
+
+		const tabs = document.createElement("div");
+		tabs.classList.add("flexltr", "tabStyle");
+
+		const body = document.createElement("div");
+		body.classList.add("flexttb");
+
+		const riscv = document.createElement("button");
+		riscv.textContent = I18n.help.riscv();
+		let lastSelected = riscv;
+		riscv.onclick = () => {
+			body.innerHTML = "";
+			lastSelected.classList.remove("selected");
+			lastSelected = riscv;
+			riscv.classList.add("selected");
+			const riscvButtons = document.createElement("div");
+			riscvButtons.classList.add("flexltr", "tabStyle");
+
+			const riscvBody = document.createElement("div");
+
+			const fakes = new Set(["fake", "veryFake"]);
+
+			const inst = document.createElement("button");
+			riscvButtons.append(inst);
+			let lastSelectedInst = inst;
+			inst.textContent = I18n.help.basicInstructions();
+			inst.onclick = () => {
+				riscvBody.innerHTML = "";
+				lastSelectedInst.classList.remove("selected");
+				lastSelectedInst = inst;
+				inst.classList.add("selected");
+				const insts = document.createElement("table");
+				const heightLimitTable = document.createElement("div");
+				heightLimitTable.classList.add("heightLimitTable");
+				const instList = instructions
+					.filter((e) => !fakes.has(e.type))
+					.map((e) => {
+						const b = I18n.instructions[e.name as keyof typeof I18n.instructions];
+						return [b.shortDesc(), b.addDescs, b.addDescs("$$$").split("$$$")[0].length] as const;
+					});
+				const spaces = instList.reduce((acc, cur) => Math.max(acc, cur[2]), 0);
+				for (const [short, desc, len] of instList) {
+					const tr = document.createElement("tr");
+					const td = document.createElement("td");
+					insts.append(tr);
+					tr.append(td);
+					td.textContent = desc(" ".repeat(spaces - len + 3) + short).split("\n")[0];
+				}
+				riscvBody.append(heightLimitTable);
+				heightLimitTable.append(insts);
+			};
+
+			const ainst = document.createElement("button");
+			riscvButtons.append(ainst);
+			ainst.textContent = I18n.help.extInstructions();
+			ainst.onclick = () => {
+				riscvBody.innerHTML = "";
+				lastSelectedInst.classList.remove("selected");
+				lastSelectedInst = ainst;
+				ainst.classList.add("selected");
+				const insts = document.createElement("table");
+				const heightLimitTable = document.createElement("div");
+				heightLimitTable.classList.add("heightLimitTable");
+				const instList = instructions
+					.filter((e) => fakes.has(e.type))
+					.map((e) => {
+						const b = I18n.instructions[e.name as keyof typeof I18n.instructions];
+						return [b.shortDesc(), b.addDescs, b.addDescs("$$$").split("$$$")[0].length] as const;
+					});
+				const spaces = instList.reduce((acc, cur) => Math.max(acc, cur[2]), 0);
+				for (const [short, desc, len] of instList) {
+					const tr = document.createElement("tr");
+					const td = document.createElement("td");
+					insts.append(tr);
+					tr.append(td);
+					td.textContent = desc(" ".repeat(spaces - len + 3) + short).split("\n")[0];
+				}
+				riscvBody.append(heightLimitTable);
+				heightLimitTable.append(insts);
+			};
+
+			const dirs = document.createElement("button");
+			riscvButtons.append(dirs);
+			dirs.textContent = I18n.help.dirs();
+			dirs.onclick = () => {
+				riscvBody.innerHTML = "";
+				lastSelectedInst.classList.remove("selected");
+				lastSelectedInst = dirs;
+				dirs.classList.add("selected");
+				const insts = document.createElement("table");
+				const heightLimitTable = document.createElement("div");
+				heightLimitTable.classList.add("heightLimitTable");
+				const keys = Object.keys(
+					I18n.translations[0].directives,
+				) as (keyof typeof I18n.directives)[] as (keyof typeof I18n.directives)[];
+				const spaces = keys.reduce((acc, cur) => Math.max(acc, cur.length), 0);
+				for (const key of keys) {
+					const tr = document.createElement("tr");
+					const td = document.createElement("td");
+					insts.append(tr);
+					tr.append(td);
+					td.textContent = "." + key + " ".repeat(spaces - key.length + 3) + I18n.directives[key]();
+				}
+				riscvBody.append(heightLimitTable);
+				heightLimitTable.append(insts);
+			};
+
+			inst.click();
+
+			body.append(riscvButtons, riscvBody);
+		};
+		riscv.click();
+
+		tabs.append(riscv);
+		const close = document.createElement("button");
+		close.textContent = I18n.help.close();
+		close.onclick = () => {
+			menu.close();
+		};
+		menu.append(title, tabs, body, close);
+		menu.setAttribute("closedBy", "any");
+		menu.showModal();
+	},
+);
+
+const helpButton = document.createElement("button");
+helpButton.textContent = I18n.help.help();
+actionRow.append(helpButton);
+helpMenu.bindContextmenu(helpButton, undefined, undefined, true);
 
 const area = document.getElementById("area") as HTMLElement;
 if (!area) throw Error("area not found");

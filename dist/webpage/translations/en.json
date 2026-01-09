@@ -13,6 +13,15 @@
 		"tools": "Tools",
 		"help": "help"
 	},
+	"help":{
+		"help":"Help",
+		"webhelp":"Web RARS help",
+		"dirs":"Directives",
+		"riscv":"RISCV",
+		"close":"Close",
+		"basicInstructions":"Basic Instructions",
+		"extInstructions":"Extended Instructions"
+	},
 	"run": {
 		"run": "Run",
 		"step": "Step",
