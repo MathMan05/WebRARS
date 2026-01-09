@@ -1,6 +1,13 @@
-import {parseLine} from "../assembler/parser.js";
+import {parsedPart, parseLine} from "../assembler/parser.js";
+import {instructions} from "../fetches.js";
+import {I18n} from "../i18n.js";
 import {Editor} from "./editor.js";
-
+for (const inst of instructions) {
+	const b = I18n.instructions[inst.name as keyof typeof I18n.instructions];
+	if (!b) {
+		console.warn(inst.name + " isn't implemented yet type:" + inst.type);
+	}
+}
 class Line {
 	readonly str: string;
 	readonly owner: Editor;
@@ -22,10 +29,15 @@ class Line {
 		y: number,
 		charWidth: number,
 		cursors: number[] = [],
+		drawCursors: boolean,
 	) {
 		let chars = 0;
+		let first: parsedPart | void = undefined;
 		for (const thing of parseLine(this.str)) {
 			let color: string;
+			if (thing.type !== "space" && thing.type !== "label" && !first) {
+				first = thing;
+			}
 			//TODO undo hardcoding of values
 			switch (thing.type) {
 				case "invalidString":
@@ -73,8 +85,111 @@ class Line {
 			}
 		}
 		ctx.fillStyle = "black";
-		for (const cursor of cursors) {
-			ctx.fillRect(x + this.moveCursor(cursor, 0) * charWidth, y, 1, this.owner.fontSize);
+		if (drawCursors) {
+			for (const cursor of cursors) {
+				ctx.fillRect(x + this.moveCursor(cursor, 0) * charWidth, y, 1, this.owner.fontSize);
+			}
+		}
+		if (
+			"possitions" in this.owner.cursor &&
+			this.owner.cursor.possitions.length === 1 &&
+			cursors.length
+		) {
+			this.owner.postDraw.push(() => {
+				switch (first?.type) {
+					case "unknown":
+						const con = instructions
+							.filter((_) => _.name.includes(first.content))
+							.map(({name}) => name);
+						const maxLen = con.reduce((max, str) => Math.max(max, str.length), 0);
+						const pos = con.map((name) => {
+							const b = I18n.instructions[name as keyof typeof I18n.instructions];
+							if (b) {
+								return name + " ".repeat(maxLen - name.length + 2) + b.shortDesc();
+							} else {
+								return name;
+							}
+						});
+						this.drawToolTip(
+							ctx,
+							x + cursors[0] * charWidth,
+							y,
+							charWidth,
+							pos.map((_) => _),
+						);
+						break;
+					case "instruction": {
+						const b = I18n.instructions[first.content as keyof typeof I18n.instructions];
+						if (!b) break;
+						const shortDesc = b.shortDesc();
+
+						const pre = b
+							.addDescs("$$$$$")
+							.split("\n")
+							.map((_) => _.split("$$$$$")) as [string, string][];
+						const maxLen = pre.reduce((max, [str]) => Math.max(max, str.length), 0);
+						const examples = pre.map(([start, end]) => {
+							return start + " ".repeat(maxLen - start.length + 3) + shortDesc + end;
+						});
+
+						this.drawToolTip(ctx, x + cursors[0] * charWidth, y, charWidth, examples);
+						break;
+					}
+					case "directive": {
+						const dir = first.content.slice(1);
+						const keys = (
+							Object.keys(I18n.translations[0].directives) as (keyof typeof I18n.directives)[]
+						)
+							.filter((_) => _.includes(dir))
+							.map((name) => name);
+						const maxLen = keys.reduce((max, str) => Math.max(max, str.length), 0);
+						const examples = keys.map((key) => {
+							return "." + key + " ".repeat(maxLen - key.length + 2) + I18n.directives[key]();
+						});
+
+						this.drawToolTip(ctx, x + cursors[0] * charWidth, y, charWidth, examples);
+						break;
+					}
+					default:
+					//do nothing :3
+				}
+			});
+		}
+	}
+	drawToolTip(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		charWidth: number,
+		tips: string[],
+	) {
+		y += this.owner.fontSize + 6;
+		x -= 5;
+		if (ctx.canvas.width - x <= charWidth * 40) {
+			x = ctx.canvas.width - charWidth * 40;
+		}
+		const longest = tips.reduce((acc, cur) => Math.max(acc, cur.length), 0);
+		if (longest === 0) return;
+		ctx.fillStyle = "tan";
+		const width = Math.floor((ctx.canvas.width - x) / charWidth);
+		const height = tips.reduce((acc, cur) => acc + Math.ceil(cur.length / width), 0);
+		ctx.fillRect(x - 1, y - 1, longest * charWidth + 2, this.owner.fontSize * height + 2);
+		ctx.fillStyle = "black";
+		let yoff = 0;
+
+		for (let tip of tips) {
+			let first = true;
+			while (tip) {
+				const len = tip.length;
+				ctx.fillText(
+					tip.substring(0, width),
+					!first && len < width ? ctx.canvas.width - len * charWidth : x + 1,
+					y + yoff,
+				);
+				tip = tip.substring(width);
+				yoff += this.owner.fontSize;
+				first = false;
+			}
 		}
 	}
 	deleteRanges(ranges: [number, number][]): {line: Line; fakeCurors: number[]} {

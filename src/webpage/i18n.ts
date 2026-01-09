@@ -46,7 +46,7 @@ class I18n {
 				break;
 			}
 		}
-		if (str) {
+		if (str !== undefined) {
 			return this.fillInBlanks(str, params);
 		} else {
 			throw new Error(msg + " not found");
@@ -133,7 +133,7 @@ function makeWeirdProxy(obj: [string, translation | void] = ["", undefined]) {
 				}
 
 				const value = translations[input];
-				if (value) {
+				if (value !== undefined) {
 					let path = obj[0];
 					if (path !== "") {
 						path += ".";

@@ -277,13 +277,6 @@
 		"args": ["reg", "offreg"]
 	},
 	{
-		"name": "lw",
-		"type": "I",
-		"opcode": 3,
-		"funct3": 2,
-		"args": ["reg", "offreg"]
-	},
-	{
 		"name": "lbu",
 		"type": "I",
 		"opcode": 3,
@@ -298,17 +291,10 @@
 		"args": ["reg", "offreg"]
 	},
 	{
-		"name": "noop",
+		"name": "nop",
 		"type": "fake",
 		"args": [],
-		"replace": "addi 0x 0x 0"
-	},
-	{
-		"name": "beq",
-		"type": "B",
-		"args": ["reg", "reg", "label"],
-		"opcode": 99,
-		"funct3": 0
+		"replace": "addi x0 x0 0"
 	},
 	{
 		"name": "jal",

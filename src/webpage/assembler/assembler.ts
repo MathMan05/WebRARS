@@ -802,8 +802,34 @@ function assemble(files: [string, string][]) {
 						}
 						case "I": {
 							if (info.args[1] === "offreg") {
-								const reg = getRegi(info.args[0] === "freg");
-								const off = getOffReg("I", reg);
+								let reg = getRegi(info.args[0] === "freg");
+								let override: {reg: number; offset: number} | void = undefined;
+								if (info.name === "jalr") {
+									const next = getNextSymbol();
+									if (next === undefined) {
+										override = {
+											reg,
+											offset: 0,
+										};
+										reg = 1;
+									} else if (next.type === "register" && !next.floating) {
+										const after = getNextSymbol();
+										if (after?.type !== "int" && after !== undefined) {
+											putBack();
+											putBack();
+										} else {
+											const offset = Number(after?.content || 0);
+											override = {
+												reg: next.number,
+												offset,
+											};
+											console.error(override);
+										}
+									} else {
+										putBack();
+									}
+								}
+								const off = override || getOffReg("I", reg);
 								const lay =
 									info.opcode |
 									(reg << 7) |

@@ -81,6 +81,7 @@ class Editor extends EventTarget {
 	}
 	height = 18;
 	charWidth = 18;
+	postDraw: (() => void)[] = [];
 	renderToCanvas(ctx: CanvasRenderingContext2D) {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		const fontSize = this.fontSize;
@@ -161,19 +162,25 @@ class Editor extends EventTarget {
 			const y = (i - linedown) * fontSize;
 
 			let cursors: number[] = [];
-			if ((this.blinkOffset + Date.now()) % this.blinkInterval < this.blinkInterval / 2) {
-				if ("possitions" in this.cursor) {
-					cursors = this.cursor.possitions.filter((_) => _.line === i).map((_) => _.index);
-				} else {
-					cursors = this.cursor.highlights.filter((_) => _.end.line === i).map((_) => _.end.index);
-				}
+			const drawCursors =
+				(this.blinkOffset + Date.now()) % this.blinkInterval < this.blinkInterval / 2;
+
+			if ("possitions" in this.cursor) {
+				cursors = this.cursor.possitions.filter((_) => _.line === i).map((_) => _.index);
+			} else {
+				cursors = this.cursor.highlights.filter((_) => _.end.line === i).map((_) => _.end.index);
 			}
-			line.drawLine(ctx, widthNeeded + 10, y, charWidth, cursors);
+
+			line.drawLine(ctx, widthNeeded + 10, y, charWidth, cursors, drawCursors);
 			ctx.fillStyle = "grey";
 			ctx.fillRect(widthNeeded + 5, y, 1, fontSize);
 			ctx.fillStyle = "black";
 			ctx.fillText(`${i + 1}`, 4, y);
 		}
+		for (const thing of this.postDraw) {
+			thing();
+		}
+		this.postDraw = [];
 	}
 	widthNeeded() {
 		return this.charWidth * Math.floor(Math.log(Math.max(this.lines.length, 33)));

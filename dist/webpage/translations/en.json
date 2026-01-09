@@ -112,5 +112,213 @@
 		"saveAll": "Save All",
 		"delete": "Delete File"
 	},
-	"submit": "Submit"
+	"submit": "Submit",
+	"instructions":{
+		"ecall":{
+			"shortDesc":"Issue a system call",
+			"addDescs": "ecall $1: Execute the system call stored in a7"
+		},
+		"ebreak":{
+			"shortDesc":"Stop execution",
+			"addDescs":"ebreak $1"
+		},
+		"add":{
+			"shortDesc":"Addition",
+			"addDescs":"add t1, t2, t3 $1: Set t1 to t2 plus t3"
+		},
+		"addi":{
+			"shortDesc":"Add Immediate",
+			"addDescs":"addi t1, t2, -100 $1: Set t1 to t2 plus 12-bit immediate"
+		},
+		"addiw":{
+			"shortDesc":"Add Immediate Word",
+			"addDescs":"addiw t1, t2, -100 $1: Set t1 to t2 plus 12-bit immediate only using the lower 32 bits"
+		},
+		"xori":{
+			"shortDesc":"XOR Immediate",
+			"addDescs":"xori t1, t2, -100 $1: Set t1 to t2 XOR sign-extended 12-bit immediate"
+		},
+		"ori":{
+			"shortDesc":"OR Immediate",
+			"addDescs":"ori t1, t2, -100 $1: Set t1 to t2 OR sign-extended 12-bit immediate"
+		},
+		"andi":{
+			"shortDesc":"AND Immediate",
+			"addDescs":"andi t1, t2, -100 $1: Set t1 to t2 AND sign-extended 12-bit immediate"
+		},
+		"and":{
+			"shortDesc":"AND",
+			"addDescs":"and t1, t2, t3 $1: Set t1 to t2 AND t3"
+		},
+		"or":{
+			"shortDesc":"OR",
+			"addDescs":"or t1, t2, t3 $1: Set t1 to t2 OR t3"
+		},
+		"xor":{
+			"shortDesc":"XOR",
+			"addDescs":"xor t1, t2, t3 $1: Set t1 to t2 XOR t3"
+		},
+		"lui":{
+			"shortDesc":"Load Upper Immediate",
+			"addDescs":"lui t1, 10000 $1: Set t1 to the 20-bit immediate left shifted by 12"
+		},
+		"auipc":{
+			"shortDesc":"Load Upper Immediate to PC",
+			"addDescs":"auipc t1, 10000 $1: Set t1 to the 20-bit immediate left shifted by 12 plus the PC"
+		},
+		"jal":{
+			"shortDesc":"Jump and Link",
+			"addDescs":"jal t1, label $1: Set t1 to the program counter then jump to the label\njal label $1: set ra to the program counter then jump to the label"
+		},
+		"jalr":{
+			"shortDesc":"Jump and Link Register",
+			"addDescs":"jalr t1, t2, -100 $1: Set t1 to the program counter (return address) then jump to t2 + immediate\njalr t1 $1: Jump to address t1 and set the return address to ra\njalr t1 100 $1: Jump to address t1 plus the immediate and set the return address to ra\njalr t1 100(t2) $1: Jump to address t2 plus the immediate and set the return address to t1"
+		},
+		"sub":{
+			"shortDesc":"Subtraction",
+			"addDescs":"sub t1, t2, t3 $1: Set t1 to t2 minus t3"
+		},
+		"beq":{
+			"shortDesc":"Branch if Equal",
+			"addDescs":"beq t1, t2, label $1: Branch to label if t1 and t2 are equal"
+		},
+		"bne":{
+			"shortDesc":"Branch if Not Equal",
+			"addDescs":"bne t1, t2, label $1: Branch to label if t1 and t2 are not equal"
+		},
+		"blt":{
+			"shortDesc":"Branch if Less Than",
+			"addDescs":"blt t1, t2, label $1: Branch to label if t1 is less than t2"
+		},
+		"bltu":{
+			"shortDesc":"Branch if Less Than Unsigned",
+			"addDescs":"bltu t1, t2, label $1: Branch to label if t1 is less than t2 (unsigned)"
+		},
+		"bge":{
+			"shortDesc":"Branch if Greater Than Or Equal",
+			"addDescs":"bge t1, t2, label $1: Branch to label if t1 is greater than or equal t2"
+		},
+		"bgeu":{
+			"shortDesc":"Branch if Greater Than Or Equal Unsigned",
+			"addDescs":"bgeu t1, t2, label $1: Branch to label if t1 is greater than or equal t2 (unsigned)"
+		},
+		"la":{
+			"shortDesc":"Load Address",
+			"addDescs":"la t1, label $1: Set t1 to label's address"
+		},
+		"b":{
+			"shortDesc":"Branch",
+			"addDescs":"b label $1: Branch to label unconditionally"
+		},
+		"j":{
+			"shortDesc":"Jump",
+			"addDescs":"j label $1: Jump to label unconditionally"
+		},
+		"li":{
+			"shortDesc":"Load Immediate",
+			"addDescs":"li t1, -100 $1: Set t1 to 12-bit immediate\nli t1, 10000000 $1: Set t1 to 32-bit immediate"
+		},
+		"sb":{
+			"shortDesc":"Store Byte",
+			"addDescs":"sb t1, -100(t2) $1: Store contents of t1 into the effective memory byte address\nsb t1, t2 $1: Store contents of t1 into the effective memory byte address\nsb t1, 100 $1: Store contents of t1 into the effective memory byte address\nsb t1, label, t2 $1: Store contents of t1 to the label using t2 as a temporary"
+		},
+		"sh":{
+			"shortDesc":"Store HalfWord",
+			"addDescs":"sh t1, -100(t2) $1: Store contents of t1 into the effective memory halfword address\nsh t1, t2 $1: Store contents of t1 into the effective memory halfword address\nsh t1, 100 $1: Store contents of t1 into the effective memory halfword address\nsh t1, label, t2 $1: Store contents of t1 to the label using t2 as a temporary"
+		},
+		"sw":{
+			"shortDesc":"Store Word",
+			"addDescs":"sw t1, -100(t2) $1: Store contents of t1 into the effective memory word address\nsw t1, t2 $1: Store contents of t1 into the effective memory word address\nsw t1, 100 $1: Store contents of t1 into the effective memory word address\nsw t1, label, t2 $1: Store contents of t1 to the label using t2 as a temporary"
+		},
+		"sd":{
+			"shortDesc":"Store Double Word",
+			"addDescs":"sd t1, -100(t2) $1: Store contents of t1 into the effective memory double word address\nsd t1, t2 $1: Store contents of t1 into the effective memory double word address\nsd t1, 100 $1: Store contents of t1 into the effective memory double word address\nsd t1, label, t2 $1: Store contents of t1 to the label using t2 as a temporary"
+		},
+		"lb":{
+			"shortDesc":"Load Byte",
+			"addDescs":"lb t1, -100(t2) $1: Load t1 to the effective memory byte address\nlb t1, t2 $1: Load t1 to the effective memory byte address\nlb t1, 100 $1: Load t1 to the effective memory byte address\nlb t1, label $1: Set the contents of t1 to the byte found at the label"
+		},
+		"lbu":{
+			"shortDesc":"Load Byte Unsigned",
+			"addDescs":"lbu t1, -100(t2) $1: Load t1 to the effective memory unsigned byte address\nlbu t1, t2 $1: Load t1 to the effective memory unsigned byte address\nlbu t1, 100 $1: Load t1 to the effective memory unsigned byte address\nlbu t1, label $1: Set the contents of t1 to the unsigned byte found at the label"
+		},
+		"lh":{
+			"shortDesc":"Load HalfWord",
+			"addDescs":"lh t1, -100(t2) $1: Load t1 to the effective memory halfword address\nlh t1, t2 $1: Load t1 to the effective memory halfword address\nlh t1, 100 $1: Load t1 to the effective memory halfword address\nlh t1, label $1: Set the contents of t1 to the halfword found at the label"
+		},
+		"lhu":{
+			"shortDesc":"Load HalfWord Unsigned",
+			"addDescs":"lhu t1, -100(t2) $1: Load t1 to the effective memory unsigned halfword address\nlhu t1, t2 $1: Load t1 to the effective memory unsigned halfword address\nlhu t1, 100 $1: Load t1 to the effective memory unsigned halfword address\nlhu t1, label $1: Set the contents of t1 to the unsigned halfword found at the label"
+		},
+		"lw":{
+			"shortDesc":"Load Word",
+			"addDescs":"lw t1, -100(t2) $1: Load t1 to the effective memory word address\nlw t1, t2 $1: Load t1 to the effective memory word address\nlw t1, 100 $1: Load t1 to the effective memory word address\nlw t1, label $1: Set the contents of t1 to the word found at the label"
+		},
+		"ld":{
+			"shortDesc":"Load Double Word",
+			"addDescs":"ld t1, -100(t2) $1: Load t1 to the effective memory double word address\nld t1, t2 $1: Load t1 to the effective memory double word address\nld t1, 100 $1: Load t1 to the effective memory double word address\nld t1, label $1: Set the contents of t1 to the double word found at the label"
+		},
+		"sll":{
+			"shortDesc":"Left Shift Logical",
+			"addDescs":"sll t1, t2, t3 $1: Store s2 left shifted by the low 5 bits of s3 in s1"
+		},
+		"srl":{
+			"shortDesc":"Right Shift Logical",
+			"addDescs":"srl t1, t2, t3 $1: Store s2 logically right shifted by the low 5 bits of s3 in s1"
+		},
+		"sra":{
+			"shortDesc":"Right Shift Arithmetic",
+			"addDescs":"sra t1, t2, t3 $1: Store s2 arithmetically right shifted by the low 5 bits of s3 in s1"
+		},
+		"srai":{
+			"shortDesc":"Right Shift Arithmetic Immediate",
+			"addDescs":"srai t1, t2, 10 $1: Store s2 arithmetically right shifted by the immediate"
+		},
+		"slli":{
+			"shortDesc":"Left Shift Logical Immediate",
+			"addDescs":"slli t1, t2, 10 $1: Store s2 left shifted by the immediate in s1"
+		},
+		"srli":{
+			"shortDesc":"Right Shift Logical Immediate",
+			"addDescs":"srli t1, t2, 10 $1: Store s2 logically right shifted by the immediate in s1"
+		},
+		"srla":{
+			"shortDesc":"Right Shift Arithmetic Immediate",
+			"addDescs":"srla t1, t2, 10 $1: Store s2 arithmetically right shifted by the immediate in s1"
+		},
+		"nop":{
+			"shortDesc":"No Operation",
+			"addDescs":"nop $1"
+		},
+		"slt":{
+			"shortDesc":"Set Less Than",
+			"addDescs":"slt t1, t2, t3 $1: If t2 is less than t3 set t1 to 1 otherwise set it to 0"
+		},
+		"slti":{
+			"shortDesc":"Set Less Than Immediate",
+			"addDescs":"slti t1, t2, 10 $1: If t2 is less than the immediate set t1 to 1 otherwise set it to 0"
+		},
+		"sltu":{
+			"shortDesc":"Set Less Than Unsigned",
+			"addDescs":"sltu t1, t2, t3 $1: If t2 is less than t3 set t1 to 1 otherwise set it to 0 (unsigned)"
+		},
+		"sltiu":{
+			"shortDesc":"Set Less Than Immediate Unsigned",
+			"addDescs":"sltiu t1, t2, 10 $1: If t2 is less than the immediate set t1 to 1 otherwise set it to 0 (unsigned)"
+		}
+	},
+	"directives":{
+		"global":"Declare the listed label(s) as global to enable referencing from other files",
+		"text":"Store items after this (Instructions) at next available text address",
+		"eqv":"Replace the first item with what follows (like #define in C)",
+		"data":"Store the next items in the data segment",
+		"macro":"Begin a macro definition",
+		"end_macro":"End a macro definition",
+		"dword":"Store listed values as 64 bit double words",
+		"word":"Store listed values as 32 bit words",
+		"half":"Store listed values as 16 bit halfwords",
+		"byte":"Store listed values as 8 bit bytes",
+		"ascii":"Store the following string(s) without null terminators",
+		"asciz":"Store the following string(s) with null terminators"
+	}
 }
