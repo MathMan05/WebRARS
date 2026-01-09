@@ -28,6 +28,8 @@ class Line {
 	) {
 		let chars = 0;
 		let first: parsedPart | void = undefined;
+		let part: parsedPart | void = undefined;
+		const spot = cursors[0] || 0;
 		for (const thing of parseLine(this.str)) {
 			let color: string;
 			if (thing.type !== "space" && thing.type !== "label" && !first) {
@@ -77,6 +79,9 @@ class Line {
 					chars++;
 					chars = Math.ceil(chars / this.owner.tabLength) * this.owner.tabLength;
 				}
+				if (spot - chars <= 0) {
+					part = thing;
+				}
 			}
 		}
 		ctx.fillStyle = "black";
@@ -88,14 +93,34 @@ class Line {
 		if (
 			"possitions" in this.owner.cursor &&
 			this.owner.cursor.possitions.length === 1 &&
-			cursors.length
+			cursors.length &&
+			first
 		) {
 			this.owner.postDraw.push(() => {
-				switch (first?.type) {
+				const con = instructions
+					.filter((_) => _.name.includes(first.content))
+					.map(({name}) => name);
+				switch (first.type) {
+					case "instruction": {
+						if (part !== first || con.length === 1) {
+							const b = I18n.instructions[first.content as keyof typeof I18n.instructions];
+							if (!b) break;
+							const shortDesc = b.shortDesc();
+
+							const pre = b
+								.addDescs("$$$$$")
+								.split("\n")
+								.map((_) => _.split("$$$$$")) as [string, string][];
+							const maxLen = pre.reduce((max, [str]) => Math.max(max, str.length), 0);
+							const examples = pre.map(([start, end]) => {
+								return start + " ".repeat(maxLen - start.length + 3) + shortDesc + end;
+							});
+
+							this.drawToolTip(ctx, x + cursors[0] * charWidth, y, charWidth, examples);
+							break;
+						}
+					}
 					case "unknown":
-						const con = instructions
-							.filter((_) => _.name.includes(first.content))
-							.map(({name}) => name);
 						const maxLen = con.reduce((max, str) => Math.max(max, str.length), 0);
 						const pos = con.map((name) => {
 							const b = I18n.instructions[name as keyof typeof I18n.instructions];
@@ -113,23 +138,7 @@ class Line {
 							pos.map((_) => _),
 						);
 						break;
-					case "instruction": {
-						const b = I18n.instructions[first.content as keyof typeof I18n.instructions];
-						if (!b) break;
-						const shortDesc = b.shortDesc();
 
-						const pre = b
-							.addDescs("$$$$$")
-							.split("\n")
-							.map((_) => _.split("$$$$$")) as [string, string][];
-						const maxLen = pre.reduce((max, [str]) => Math.max(max, str.length), 0);
-						const examples = pre.map(([start, end]) => {
-							return start + " ".repeat(maxLen - start.length + 3) + shortDesc + end;
-						});
-
-						this.drawToolTip(ctx, x + cursors[0] * charWidth, y, charWidth, examples);
-						break;
-					}
 					case "directive": {
 						const dir = first.content.slice(1);
 						const keys = (
