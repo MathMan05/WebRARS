@@ -823,7 +823,6 @@ function assemble(files: [string, string][]) {
 												reg: next.number,
 												offset,
 											};
-											console.error(override);
 										}
 									} else {
 										putBack();

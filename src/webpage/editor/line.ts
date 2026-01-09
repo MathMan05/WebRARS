@@ -2,12 +2,7 @@ import {parsedPart, parseLine} from "../assembler/parser.js";
 import {instructions} from "../fetches.js";
 import {I18n} from "../i18n.js";
 import {Editor} from "./editor.js";
-for (const inst of instructions) {
-	const b = I18n.instructions[inst.name as keyof typeof I18n.instructions];
-	if (!b) {
-		console.warn(inst.name + " isn't implemented yet type:" + inst.type);
-	}
-}
+
 class Line {
 	readonly str: string;
 	readonly owner: Editor;
