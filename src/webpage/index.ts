@@ -171,7 +171,7 @@ helpMenu.addButton(
 
 			const riscvBody = document.createElement("div");
 
-			const fakes = new Set(["fake", "veryFake"]);
+			const fakes = new Set(["fake", "reallyfake"]);
 
 			const inst = document.createElement("button");
 			riscvButtons.append(inst);
