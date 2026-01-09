@@ -127,6 +127,7 @@ class Line {
 			this.owner.postDraw.push(() => {
 				const con = findinsts(first.content);
 				switch (first.type) {
+					//@ts-expect-error fall-through is meant to happen
 					case "instruction": {
 						if (part !== first || con.length === 1) {
 							const b = I18n.instructions[first.content as keyof typeof I18n.instructions];
