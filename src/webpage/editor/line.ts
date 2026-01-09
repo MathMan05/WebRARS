@@ -27,14 +27,15 @@ class Line {
 		drawCursors: boolean,
 	) {
 		let chars = 0;
-		let first: parsedPart | void = undefined;
+
 		let part: parsedPart | void = undefined;
+		let indexpart = 0;
 		const spot = cursors[0] || 0;
-		for (const thing of parseLine(this.str)) {
+		const parts = [...parseLine(this.str)];
+		let j = 0;
+		for (const thing of parts) {
 			let color: string;
-			if (thing.type !== "space" && thing.type !== "label" && !first) {
-				first = thing;
-			}
+
 			//TODO undo hardcoding of values
 			switch (thing.type) {
 				case "invalidString":
@@ -79,10 +80,12 @@ class Line {
 					chars++;
 					chars = Math.ceil(chars / this.owner.tabLength) * this.owner.tabLength;
 				}
-				if (spot - chars <= 0) {
+				if (spot - chars <= 0 && !part) {
 					part = thing;
+					indexpart = j;
 				}
 			}
+			j++;
 		}
 		ctx.fillStyle = "black";
 		if (drawCursors) {
@@ -94,12 +97,35 @@ class Line {
 			"possitions" in this.owner.cursor &&
 			this.owner.cursor.possitions.length === 1 &&
 			cursors.length &&
-			first
+			parts.length
 		) {
+			function findinsts(str: string) {
+				return instructions.filter((_) => _.name.includes(str)).map(({name}) => name);
+			}
+			const validtypes = new Set(["instruction", "unknown", "directive"]);
+			let first: parsedPart | void = undefined;
+			for (let i = indexpart; i >= 0; i--) {
+				const thing = parts[i];
+				if (validtypes.has(thing.type)) {
+					if (thing.type == "unknown" && !findinsts(thing.content).length) continue;
+					first = thing;
+					break;
+				}
+			}
+			if (!first) {
+				for (let i = indexpart; i < parts.length; i++) {
+					const thing = parts[i];
+					if (validtypes.has(thing.type)) {
+						if (thing.type == "unknown" && !findinsts(thing.content).length) continue;
+						first = thing;
+						break;
+					}
+				}
+			}
+			if (!first) return;
+
 			this.owner.postDraw.push(() => {
-				const con = instructions
-					.filter((_) => _.name.includes(first.content))
-					.map(({name}) => name);
+				const con = findinsts(first.content);
 				switch (first.type) {
 					case "instruction": {
 						if (part !== first || con.length === 1) {
