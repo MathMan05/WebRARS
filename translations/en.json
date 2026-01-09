@@ -328,6 +328,8 @@
 		"half":"Store listed values as 16 bit halfwords",
 		"byte":"Store listed values as 8 bit bytes",
 		"ascii":"Store the following string(s) without null terminators",
-		"asciz":"Store the following string(s) with null terminators"
+		"asciz":"Store the following string(s) with null terminators",
+		"double":"Stores the list values as 64 bit floats",
+		"float":"Stores the list values as 32 bit floats"
 	}
 }
