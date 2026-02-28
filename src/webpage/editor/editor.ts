@@ -101,9 +101,10 @@ class Editor extends EventTarget {
 				ctx.fillRect(widthNeeded + 10, y, ctx.canvas.width, this.fontSize);
 			}
 		}
+		const theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
 
 		if ("highlights" in this.cursor) {
-			ctx.fillStyle = "LightBlue";
+			ctx.fillStyle = theme == "light" ? "LightBlue" : "darkblue";
 			function getStart(
 				o1: {
 					line: number;
@@ -155,7 +156,7 @@ class Editor extends EventTarget {
 				}
 			}
 		}
-		const theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
+
 		for (let i = linedown; i < height + linedown; i++) {
 			const line = this.lines[i];
 			if (!line) break;
