@@ -2,7 +2,6 @@ import {promises as fs} from "fs";
 import * as swc from "@swc/core";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
-import child_process from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
