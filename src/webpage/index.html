@@ -8,6 +8,9 @@
 		<link rel="icon" type="image/x-icon" href="./favicon.ico" />
 	</head>
 	<body>
+		<script>
+			document.body.className = (localStorage.getItem("theme") || "dark") + "-theme";
+		</script>
 		<div class="flexttb" style="height: 100%">
 			<div id="actionRow" class="flexltr"></div>
 
