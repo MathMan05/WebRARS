@@ -12,8 +12,6 @@
   "author": "MathMan05",
   "license": "GPL-3.0",
   "dependencies": {
-    "compression": "^1.8.1",
-    "express": "^4.22.1",
     "@swc/core": "1.11.24"
   },
   "prettier": {
@@ -23,7 +21,6 @@
     "bracketSpacing": false
   },
   "devDependencies": {
-      "@types/express": "^4.17.25",
       "@types/node-fetch": "^2.6.13",
       "prettier": "^3.7.4",
       "typescript": "^5.9.3"
