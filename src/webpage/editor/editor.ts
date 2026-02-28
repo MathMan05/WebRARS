@@ -656,8 +656,9 @@ class Editor extends EventTarget {
 				this.renderToCanvas(ctx);
 				return;
 			}
-			e.preventDefault();
+
 			if (e.key.startsWith("Arrow")) {
+				e.preventDefault();
 				if (!e.shiftKey) {
 					this.castToCursorsPassive();
 					if (!("possitions" in this.cursor))
@@ -715,6 +716,7 @@ class Editor extends EventTarget {
 				!e.altKey &&
 				!e.ctrlKey
 			) {
+				e.preventDefault();
 				if ("highlights" in this.cursor) {
 					this.pushPast();
 					this.castToCursorsDestructive();
@@ -784,12 +786,14 @@ class Editor extends EventTarget {
 				!e.altKey &&
 				!e.metaKey
 			) {
+				e.preventDefault();
 				navigator.clipboard.writeText(this.copy().join("\n"));
 				if (e.key === "x") {
 					this.pushPast();
 					this.castToCursorsDestructive();
 				}
 			} else if (e.key.toLowerCase() === "a" && e.ctrlKey && !e.altKey && !e.metaKey) {
+				e.preventDefault();
 				if (e.shiftKey) {
 					console.log("not here?");
 					this.castToCursorsPassive();
@@ -807,8 +811,10 @@ class Editor extends EventTarget {
 					};
 				}
 			} else if (e.key === "a" && !e.ctrlKey && e.altKey && !e.metaKey) {
+				e.preventDefault();
 				this.assemble();
 			} else if (e.key === "Backspace" && e.ctrlKey) {
+				e.preventDefault();
 				this.pushPast();
 				this.castToCursorsDestructive();
 				if ("highlight" in this.cursor) throw Error("oops, idk how I got here!");
@@ -829,6 +835,7 @@ class Editor extends EventTarget {
 				this.renderToCanvas(ctx);
 				return;
 			} else if (e.key === "s" && e.ctrlKey && !e.altKey && !e.metaKey) {
+				e.preventDefault();
 				this.save();
 			}
 			this.focusCursors();
