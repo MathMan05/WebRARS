@@ -8,6 +8,70 @@ body {
 	overflow: hidden; /* avoid "bounce" */
 	-webkit-text-size-adjust: 100%;
 }
+.dark-theme {
+	background: #1b1b1b;
+	color: #ffffff;
+	#mainRow {
+		background: #333333;
+		img {
+			background: #5a5a5a;
+		}
+	}
+	#actionRow {
+		background: #373737;
+		color: white;
+	}
+	button {
+		background: #101010;
+		color: white;
+	}
+	.tabStyle {
+		button {
+			background: #0d0d0d;
+		}
+		.selected {
+			box-shadow: none;
+			background: #090909;
+		}
+		button:hover {
+			background: #3d3d3d;
+		}
+	}
+	.projectList {
+		button:nth-of-type(even) {
+			background-color: rgb(46 46 46);
+		}
+	}
+	.fileList {
+		span {
+			background: #0a0a0a;
+		}
+	}
+	.regiTable {
+		tr:first-child {
+			background: #000000;
+			text-align: center;
+		}
+	}
+	tr:nth-of-type(even) {
+		background-color: rgb(45 45 45);
+	}
+	tr:first-child {
+		background: #000000;
+	}
+	.controls {
+		background: #080808;
+	}
+	.LastUsed {
+		background-color: #5b6529 !important;
+	}
+	.running {
+		background-color: #5b6529;
+	}
+	tr:nth-of-type(even).running {
+		background-color: #5b6529;
+	}
+}
 .speedDiv {
 	width: 200px;
 }

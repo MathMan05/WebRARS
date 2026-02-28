@@ -33,6 +33,8 @@ class Line {
 		const spot = cursors[0] || 0;
 		const parts = [...parseLine(this.str)];
 		let j = 0;
+		const theme = localStorage.getItem("theme") || ("light" as "dark") || "light";
+
 		for (const thing of parts) {
 			let color: string;
 
@@ -40,13 +42,13 @@ class Line {
 			switch (thing.type) {
 				case "invalidString":
 				case "invalidChar":
-					color = "red";
+					color = theme === "light" ? "red" : "indianred";
 					break;
 				case "instruction":
-					color = "blue";
+					color = theme === "light" ? "blue" : "aqua";
 					break;
 				case "register":
-					color = "red";
+					color = theme === "light" ? "red" : "indianred";
 					break;
 				case "variable":
 					color = "goldenrod";
@@ -54,7 +56,7 @@ class Line {
 				case "string":
 				case "comment":
 				case "char":
-					color = "green";
+					color = theme === "light" ? "green" : "greenyellow";
 					break;
 				case "directive":
 					color = "magenta";
@@ -67,7 +69,7 @@ class Line {
 				case "label":
 				case "parentheses":
 				case "unknown":
-					color = "black";
+					color = theme === "light" ? "black" : "white";
 			}
 			ctx.fillStyle = color;
 			const split = thing.content.split("	");

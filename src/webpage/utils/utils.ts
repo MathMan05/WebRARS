@@ -1,13 +1,3 @@
-setTheme();
-export function setTheme() {
-	let name = localStorage.getItem("theme");
-	if (!name) {
-		localStorage.setItem("theme", "Dark");
-		name = "Dark";
-	}
-	document.body.className = name + "-theme";
-}
-
 class Directory {
 	static home = this.createHome();
 	handle: FileSystemDirectoryHandle;

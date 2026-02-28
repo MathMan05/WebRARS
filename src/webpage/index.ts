@@ -273,6 +273,9 @@ helpMenu.addButton(
 		menu.append(title, tabs, body, close);
 		menu.setAttribute("closedBy", "any");
 		menu.showModal();
+		menu.onclose = () => {
+			menu.remove();
+		};
 	},
 );
 
@@ -280,6 +283,48 @@ const helpButton = document.createElement("button");
 helpButton.textContent = I18n.help.help();
 actionRow.append(helpButton);
 helpMenu.bindContextmenu(helpButton, undefined, undefined, true);
+
+const settingsButton = document.createElement("button");
+settingsButton.textContent = I18n.settings.settings();
+actionRow.append(settingsButton);
+let theme = localStorage.getItem("theme") || ("dark" as "light") || "dark";
+function updateTheme() {
+	document.body.className = theme + "-theme";
+}
+updateTheme();
+settingsButton.onclick = () => {
+	const menu = document.createElement("dialog");
+	menu.classList.add("flexttb");
+	const h1 = document.createElement("h1");
+	h1.textContent = I18n.settings.settings();
+
+	const themeSpan = document.createElement("span");
+	themeSpan.textContent = I18n.settings.theme.theme();
+
+	const themeSelect = document.createElement("select");
+	const light = document.createElement("option");
+	light.textContent = I18n.settings.theme.light();
+	light.value = "light";
+	const dark = document.createElement("option");
+	dark.textContent = I18n.settings.theme.dark();
+	dark.value = "dark";
+	if (theme === "dark") dark.selected = true;
+	themeSelect.value = theme;
+	themeSelect.append(light, dark);
+	themeSelect.onchange = () => {
+		theme = themeSelect.value;
+		localStorage.setItem("theme", theme);
+		updateTheme();
+	};
+
+	menu.append(h1, themeSpan, themeSelect);
+	document.body.append(menu);
+	menu.setAttribute("closedBy", "any");
+	menu.showModal();
+	menu.onclose = () => {
+		menu.remove();
+	};
+};
 
 const area = document.getElementById("area") as HTMLElement;
 if (!area) throw Error("area not found");
