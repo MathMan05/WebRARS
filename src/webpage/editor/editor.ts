@@ -91,8 +91,8 @@ class Editor extends EventTarget {
 			if (index < linedown) {
 				this.scroll.linedown = index;
 			}
-			if (index > linedown + this.height) {
-				this.scroll.linedown = this.height + index;
+			if (index >= linedown + this.height) {
+				this.scroll.linedown = index - this.height + 1;
 			}
 		}
 
