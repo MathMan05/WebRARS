@@ -89,7 +89,7 @@ class Line {
 			}
 			j++;
 		}
-		ctx.fillStyle = "black";
+		ctx.fillStyle = theme === "dark" ? "white" : "black";
 		if (drawCursors) {
 			for (const cursor of cursors) {
 				ctx.fillRect(x + this.moveCursor(cursor, 0) * charWidth, y, 1, this.owner.fontSize);
