@@ -1,9 +1,7 @@
-#!/usr/bin/env node
-
-import compression from "compression";
-import express, {Request, Response} from "express";
+import http from "http";
 import fs from "node:fs/promises";
 import path from "node:path";
+
 import {fileURLToPath} from "node:url";
 import process from "node:process";
 
@@ -24,8 +22,9 @@ async function getDirectories(path: string): Promise<dirtype> {
 		),
 	);
 }
+
 let dirs: dirtype | undefined = undefined;
-async function combinePath(path: string, tryAgain = true): Promise<string> {
+async function combinePath(path: string, tryAgain = true, reqpath: string): Promise<string> {
 	if (!dirs) {
 		dirs = await getDirectories(__dirname);
 	}
@@ -46,52 +45,79 @@ async function combinePath(path: string, tryAgain = true): Promise<string> {
 	}
 	if (find(pathDir, dirs)) {
 		return __dirname + path;
+	} else if (reqpath.startsWith("/channels")) {
+		return __dirname + "/webpage/app.html";
 	} else {
 		if (!path.includes(".")) {
-			const str = await combinePath(path + ".html", false);
-			if (str !== __dirname + "/webpage/index.html") {
+			const str = await combinePath(path + ".html", false, reqpath);
+			if (str !== __dirname + "/webpage/404.html") {
 				return str;
 			}
 		}
 		if (devmode && tryAgain) {
 			dirs = await getDirectories(__dirname);
-			return combinePath(path, false);
+			return combinePath(path, false, reqpath);
 		}
-		return __dirname + "/webpage/index.html";
+		return __dirname + "/webpage/404.html";
 	}
 }
 
-const app = express();
-
-app.use(compression());
-
-app.use("/getupdates", async (_req: Request, res: Response) => {
-	try {
-		const stats = await fs.stat(path.join(__dirname, "webpage"));
-		res.send(stats.mtimeMs.toString());
-	} catch (error) {
-		console.error("Error getting updates:", error);
-		res.status(500).send("Error getting updates");
+function guessMime(str: string) {
+	const ext = str.split(".").at(-1);
+	switch (ext) {
+		case "js":
+		case "cjs":
+			return "text/javascript";
+		case "html":
+			return "text/html";
+		case "css":
+			return "text/css";
+		case "svg":
+			return "image/svg+xml";
+		case "ico":
+			return "image/x-icon";
+		case "png":
+		case "jpeg":
+		case "webp":
+			return "image/" + ext;
+		default:
+			return "text/plain";
 	}
-});
+}
+const app = http.createServer(async (req, res) => {
+	const url = new URL(req.url as string, "http://localhost");
+	const pathstr = url.pathname;
 
-app.use("/", async (req: Request, res: Response) => {
-	if (req.path === "/") {
-		res.sendFile(path.join(__dirname, "webpage", "index.html"));
+	async function sendFile(file: string) {
+		try {
+			const f = await fs.readFile(file);
+			res.writeHead(200, {"Content-Type": guessMime(file)});
+			res.write(f);
+			res.end();
+		} catch {
+			res.writeHead(404, {"Content-Type": "text/html"});
+			res.write("Uh, this ain't supposed to happen");
+			res.end();
+		}
+	}
+	if (pathstr === "/") {
+		sendFile(path.join(__dirname, "webpage", "index.html"));
 		return;
 	}
 
-	if (req.path.startsWith("/invite/")) {
-		res.sendFile(path.join(__dirname, "webpage", "invite.html"));
+	if (pathstr.startsWith("/invite/")) {
+		sendFile(path.join(__dirname, "webpage", "invite.html"));
 		return;
 	}
-	const filePath = await combinePath("/webpage/" + req.path);
-	res.sendFile(filePath);
+	if (pathstr.startsWith("/template/")) {
+		sendFile(path.join(__dirname, "webpage", "template.html"));
+		return;
+	}
+	const filePath = await combinePath("/webpage/" + pathstr, true, pathstr);
+	sendFile(filePath);
 });
 
-app.set("trust proxy", (ip: string) => ip.startsWith("127."));
-
-const PORT = process.env.PORT || Number(process.argv[2]) || 8081;
+const PORT = process.env.PORT || Number(process.argv[2]) || 8080;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
 });
