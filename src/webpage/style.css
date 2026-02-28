@@ -8,8 +8,8 @@ body {
 	overflow: hidden; /* avoid "bounce" */
 	-webkit-text-size-adjust: 100%;
 }
-.speedDiv{
-	width:200px;
+.speedDiv {
+	width: 200px;
 }
 #regiArea {
 	flex-shrink: 0;
@@ -27,22 +27,24 @@ body {
 		margin-bottom: 3px;
 	}
 }
-.heightLimitTable{
+
+.heightLimitTable {
 	height: 60vh;
-	width:80vw;
-	overflow:auto;
-	tr:first-child{
+	width: 80vw;
+	overflow: auto;
+	tr:first-child {
 		position: relative !important;
-		background:white !important;
+		background: white !important;
 	}
-	td{
-		white-space:pre;
+	td {
+		white-space: pre;
 	}
 }
-dialog{
-	border:black solid 2px;
-	border-radius:6px;
-	background:#f6f6f6;
+
+dialog {
+	border: black solid 2px;
+	border-radius: 6px;
+	background: #f6f6f6;
 }
 .fileList {
 	padding: 2px;
@@ -88,7 +90,7 @@ dialog{
 	flex-shrink: 1;
 	min-height: 0;
 	border: 2px solid rgb(140 140 140);
-	table{
+	table {
 		table-layout: fixed;
 	}
 }
@@ -199,20 +201,20 @@ tr:nth-of-type(even) {
 	display: flex;
 	flex-direction: column;
 }
-.memView{
-	flex-shrink:1;
-	min-height:0;
+.memView {
+	flex-shrink: 1;
+	min-height: 0;
 }
-.memView input{
-	background:transparent;
-	border:none;
+.memView input {
+	background: transparent;
+	border: none;
 	font-size: 10px;
 	min-width: 100%;
 	max-width: 100%;
 }
-.controls{
-	flex-shrink:0;
-	display:flex;
+.controls {
+	flex-shrink: 0;
+	display: flex;
 	justify-content: center;
 	gap: 4px;
 	padding: 4px 0px;

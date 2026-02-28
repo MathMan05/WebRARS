@@ -1,5 +1,5 @@
 //@ts-ignore
-import {langs} from "./translations/langs.js";
+import {langs} from "/translations/langs.js";
 const langmap = new Map<string, string>();
 for (const lang of Object.keys(langs) as string[]) {
 	langmap.set(lang, langs[lang]);
