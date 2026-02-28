@@ -25,6 +25,7 @@ class Line {
 		charWidth: number,
 		cursors: number[] = [],
 		drawCursors: boolean,
+		theme: "dark" | "light",
 	) {
 		let chars = 0;
 
@@ -33,7 +34,6 @@ class Line {
 		const spot = cursors[0] || 0;
 		const parts = [...parseLine(this.str)];
 		let j = 0;
-		const theme = localStorage.getItem("theme") || ("light" as "dark") || "light";
 
 		for (const thing of parts) {
 			let color: string;

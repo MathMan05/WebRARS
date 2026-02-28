@@ -287,7 +287,7 @@ helpMenu.bindContextmenu(helpButton, undefined, undefined, true);
 const settingsButton = document.createElement("button");
 settingsButton.textContent = I18n.settings.settings();
 actionRow.append(settingsButton);
-let theme = localStorage.getItem("theme") || ("dark" as "light") || "dark";
+let theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
 function updateTheme() {
 	document.body.className = theme + "-theme";
 }
@@ -312,7 +312,7 @@ settingsButton.onclick = () => {
 	themeSelect.value = theme;
 	themeSelect.append(light, dark);
 	themeSelect.onchange = () => {
-		theme = themeSelect.value;
+		theme = themeSelect.value as "light" | "dark";
 		localStorage.setItem("theme", theme);
 		updateTheme();
 	};

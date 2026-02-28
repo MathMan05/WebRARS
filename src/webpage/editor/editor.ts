@@ -155,7 +155,7 @@ class Editor extends EventTarget {
 				}
 			}
 		}
-
+		const theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
 		for (let i = linedown; i < height + linedown; i++) {
 			const line = this.lines[i];
 			if (!line) break;
@@ -171,10 +171,10 @@ class Editor extends EventTarget {
 				cursors = this.cursor.highlights.filter((_) => _.end.line === i).map((_) => _.end.index);
 			}
 
-			line.drawLine(ctx, widthNeeded + 10, y, charWidth, cursors, drawCursors);
+			line.drawLine(ctx, widthNeeded + 10, y, charWidth, cursors, drawCursors, theme);
 			ctx.fillStyle = "grey";
 			ctx.fillRect(widthNeeded + 5, y, 1, fontSize);
-			ctx.fillStyle = "black";
+			ctx.fillStyle = theme === "dark" ? "white" : "black";
 			ctx.fillText(`${i + 1}`, 4, y);
 		}
 		for (const thing of this.postDraw) {
