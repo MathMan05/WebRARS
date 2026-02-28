@@ -366,7 +366,7 @@ editButton.onclick = () => {
 	editArea();
 };
 executeButton.onclick = () => {
-	executeArea();
+	if (system.isReady()) executeArea();
 };
 let system = new Etab();
 

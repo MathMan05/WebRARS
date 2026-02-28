@@ -84,6 +84,9 @@ class Etab {
 			updateSpeed();
 		};
 	}
+	isReady() {
+		return !!this.sys;
+	}
 	stop() {
 		this.stopped = true;
 		this.changeButtonStates();
