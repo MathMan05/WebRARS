@@ -146,6 +146,7 @@ function assemble(files: [string, string][]) {
 	const globalLabelMap: labelMap = new Map();
 
 	const asmMap = new Map<number, {file: string; line: number}>();
+	const badReads: number[] = [];
 
 	function link(labelMap: labelMap, dataLables: linkerInfo, globalRun = false, macro = false) {
 		const ram = new Ram(dataView, textView, [dataIndex, textIndex, 1 << 22]);
@@ -271,6 +272,15 @@ function assemble(files: [string, string][]) {
 			i = 0,
 			macro = false,
 		) {
+			function fixBadReads() {
+				let read = 0;
+				while ((read = badReads.pop() || 0)) {
+					asmMap.set(read, {
+						file,
+						line: i,
+					});
+				}
+			}
 			console.trace("test");
 			let macroBuild: macro | undefined;
 			function placeData(
@@ -295,10 +305,13 @@ function assemble(files: [string, string][]) {
 						file,
 					);
 				}
-				asmMap.set(place === "text" ? textIndex + 0x00400000 : dataIndex + 0x10010000, {
-					file,
-					line: i,
-				});
+				if (isNaN(i))
+					badReads.push(place === "text" ? textIndex + 0x00400000 : dataIndex + 0x10010000);
+				else
+					asmMap.set(place === "text" ? textIndex + 0x00400000 : dataIndex + 0x10010000, {
+						file,
+						line: i,
+					});
 				if ((directive === "ascii" || directive === "asciz") && place === "data") {
 					if (data.type !== "string") {
 						throw new AssemblError(I18n.errors.notAString(i + 1 + "", data.type), i, file);
@@ -1017,6 +1030,7 @@ function assemble(files: [string, string][]) {
 										macro.line,
 										true,
 									);
+									fixBadReads();
 									for (const thing of dataLables2) {
 										dataLables.set(...thing);
 									}
@@ -1150,6 +1164,7 @@ function assemble(files: [string, string][]) {
 										macro.line,
 										true,
 									);
+									fixBadReads();
 								} catch (e) {
 									if (e instanceof AssemblError) {
 										e.addTrace(i, file);
