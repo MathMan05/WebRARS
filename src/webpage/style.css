@@ -71,6 +71,20 @@ body {
 	tr:nth-of-type(even).running {
 		background-color: #5b6529;
 	}
+	dialog {
+		background: #1a1a1a;
+	}
+	h1,
+	h2,
+	span {
+		color: white;
+	}
+	.heightLimitTable {
+		color: white;
+		tr:first-child {
+			background: #000000 !important;
+		}
+	}
 }
 .speedDiv {
 	width: 200px;
