@@ -93,6 +93,7 @@
 	"memvalue":"Value (+$1)",
 	"code": "Code",
 	"basic": "Basic",
+	"source":"Source",
 	"startScreen": "Open a file or start a project!",
 	"startProject": "Start a new project",
 	"openFile": "Open a file!",

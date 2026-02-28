@@ -196,6 +196,7 @@ class Line {
 		charWidth: number,
 		tips: string[],
 	) {
+		if (this.owner.focusedLine !== undefined) return;
 		y += this.owner.fontSize + 6;
 		x -= 5;
 		if (ctx.canvas.width - x <= charWidth * 40) {

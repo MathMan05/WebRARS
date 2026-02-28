@@ -120,11 +120,19 @@ class Etab {
 			this.updateMemCell(addr, false);
 		}
 	}
-	handSystem(sys: Symstem) {
+	instMap?: Map<number, {file: string; line: number}>;
+	asm?: [string, string][];
+	handSystem(sys: {
+		emu: Symstem;
+		instMap: Map<number, {file: string; line: number}>;
+		asm: [string, string][];
+	}) {
 		this.csysQue = new Array(1000);
-		this.sys = sys;
+		this.sys = sys.emu;
+		this.instMap = sys.instMap;
+		this.asm = sys.asm;
 		this.systemReg();
-		this.csys = sys.compact();
+		this.csys = sys.emu.compact();
 	}
 	systemReg() {
 		if (!this.sys) return;
@@ -255,6 +263,7 @@ class Etab {
 		this.started = false;
 		this.csysQue = new Array(1000);
 		this.changeButtonStates();
+		this.onLine(undefined);
 	}
 	updateLastUsed() {
 		try {
@@ -285,6 +294,8 @@ class Etab {
 			}
 		}
 	}
+
+	onLine: (line: {line: number; file: string} | undefined) => void = () => {};
 	async start() {
 		if (this.sys) {
 			if (this.running) await this.running;
@@ -303,6 +314,7 @@ class Etab {
 							console.log("waitStep");
 							await this.waitStep();
 						} else {
+							this.onLine(undefined);
 							this.enque();
 							if (i >= 1000) {
 								i = 0;
@@ -326,6 +338,7 @@ class Etab {
 				if (elm && !sys.done) {
 					elm.classList.add("running");
 				}
+				if (sys.done) this.onLine(undefined);
 				res();
 				this.running = undefined;
 				this.stopped = true;
@@ -358,11 +371,13 @@ class Etab {
 							console.error(e);
 						}
 					}
+					this.onLine(this.getCurrentIndex());
 					elm = this.htmlMap.get(this.sys.pc);
 					if (elm && !sys.done) {
 						elm.classList.add("running");
 						elm.scrollIntoView({behavior: "instant", block: "center"});
 					}
+					if (sys.done) this.onLine(undefined);
 					this.updateRegis();
 				}
 				this.changeButtonStates();
@@ -371,6 +386,24 @@ class Etab {
 				res();
 			}
 		});
+	}
+	getFileLine(line: {file: string; line: number}): string {
+		if (Number.isNaN(line.line)) return "";
+		if (!this.asm) return "";
+		for (const [contents, file] of this.asm) {
+			if (file === line.file) {
+				return (
+					(this.asm.length === 1 ? "" : line.file.replace(/.*:\//m, "") + ", ") +
+					line.line +
+					": " +
+					contents.split("\n")[line.line]
+				);
+			}
+		}
+		return "";
+	}
+	getCurrentIndex() {
+		return this.instMap?.get(this.sys?.pc as number);
 	}
 	createHTML() {
 		this.htmlMap = new Map();
@@ -394,6 +427,12 @@ class Etab {
 		const basic = document.createElement("th");
 		basic.textContent = I18n.basic();
 		tr.append(basic);
+
+		if (this.instMap) {
+			const source = document.createElement("th");
+			source.textContent = I18n.source();
+			tr.append(source);
+		}
 		table.append(tr);
 		if (this.sys) {
 			this.enableButtons();
@@ -416,6 +455,15 @@ class Etab {
 				const basic = document.createElement("td");
 				basic.textContent = toAsm(val);
 				tr.append(basic);
+
+				if (this.instMap) {
+					const code = document.createElement("td");
+					const val = this.instMap.get(i);
+					if (val) {
+						code.textContent = this.getFileLine(val);
+					}
+					tr.append(code);
+				}
 				table.append(tr);
 			}
 		}

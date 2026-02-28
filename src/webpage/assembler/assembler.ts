@@ -145,6 +145,8 @@ function assemble(files: [string, string][]) {
 	const globalDataLabels: linkerInfo = new Map();
 	const globalLabelMap: labelMap = new Map();
 
+	const asmMap = new Map<number, {file: string; line: number}>();
+
 	function link(labelMap: labelMap, dataLables: linkerInfo, globalRun = false, macro = false) {
 		const ram = new Ram(dataView, textView, [dataIndex, textIndex, 1 << 22]);
 
@@ -293,6 +295,10 @@ function assemble(files: [string, string][]) {
 						file,
 					);
 				}
+				asmMap.set(place === "text" ? textIndex + 0x00400000 : dataIndex + 0x10010000, {
+					file,
+					line: i,
+				});
 				if ((directive === "ascii" || directive === "asciz") && place === "data") {
 					if (data.type !== "string") {
 						throw new AssemblError(I18n.errors.notAString(i + 1 + "", data.type), i, file);
@@ -1204,6 +1210,6 @@ function assemble(files: [string, string][]) {
 	console.warn("global linking");
 	const ram = link(globalLabelMap, globalDataLabels, true);
 	const main = globalLabelMap.get("main");
-	return [ram, main || 0x00400000] as [Ram, number];
+	return [ram, main || 0x00400000, asmMap] as [Ram, number, typeof asmMap];
 }
 export {assemble, AssemblError};

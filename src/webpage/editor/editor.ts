@@ -82,26 +82,42 @@ class Editor extends EventTarget {
 	height = 18;
 	charWidth = 18;
 	postDraw: (() => void)[] = [];
+	focusedLine?: number;
+	focusLine(index?: number) {
+		this.focusedLine = index;
+		const linedown = Math.floor(this.scroll.linedown);
+		if (index !== undefined) {
+			console.log(index, linedown, this.height);
+			if (index < linedown) {
+				this.scroll.linedown = index;
+			}
+			if (index > linedown + this.height) {
+				this.scroll.linedown = this.height + index;
+			}
+		}
+
+		this.forceCanvasUpdate();
+	}
 	renderToCanvas(ctx: CanvasRenderingContext2D) {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		const fontSize = this.fontSize;
 		const height = Math.floor(ctx.canvas.height / this.fontSize);
-		this.height = height;
+		this.height = height || this.height;
 		ctx.font = `${fontSize}px monospace`;
 		const charWidth = ctx.measureText("a").width;
 		this.charWidth = charWidth;
 		ctx.textBaseline = "hanging";
 		const linedown = Math.floor(this.scroll.linedown);
 		const widthNeeded = this.widthNeeded();
+		const theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
 		for (let i = linedown; i < height + linedown; i++) {
 			const line = this.lines[i];
-			if (line && line.errored) {
-				ctx.fillStyle = "lemonchiffon";
+			if ((line && line.errored) || this.focusedLine === i) {
+				ctx.fillStyle = theme == "light" ? "lemonchiffon" : "yellowgreen";
 				const y = (i - linedown) * fontSize;
 				ctx.fillRect(widthNeeded + 10, y, ctx.canvas.width, this.fontSize);
 			}
 		}
-		const theme = (localStorage.getItem("theme") || "dark") as "light" | "dark";
 
 		if ("highlights" in this.cursor) {
 			ctx.fillStyle = theme == "light" ? "LightBlue" : "darkblue";
@@ -538,10 +554,14 @@ class Editor extends EventTarget {
 		}
 		return strings;
 	}
+	forceCanvasUpdate = () => {};
 	ownCanvas(c: HTMLCanvasElement) {
 		let lastClicked = 0;
 		const ctx = c.getContext("2d");
 		if (!ctx) throw Error("Unable to get canvas context 2d");
+		this.forceCanvasUpdate = () => {
+			this.renderToCanvas(ctx);
+		};
 		const mut = new ResizeObserver((e) => {
 			for (const _ of e) {
 			}
@@ -943,11 +963,12 @@ class Editor extends EventTarget {
 		try {
 			this.console.addMessage("\n" + I18n.startingAssembly() + "\n\n");
 			let emu: Symstem;
+			const asm: [string, string][] = [];
 			if (this.dir && this.fileDir) {
 				const dirL = this.fileDir.split("/");
 				dirL.pop();
 				const dir = dirL.join("/") + "/";
-				const build: [string, string][] = [[this.string(), this.fileDir]];
+				asm.push([this.string(), this.fileDir]);
 				for await (const [name, thing] of this.dir.getAllInDir()) {
 					if (thing instanceof Directory) continue;
 					if (!name.endsWith(".asm")) continue;
@@ -955,22 +976,20 @@ class Editor extends EventTarget {
 					if (thisDir === this.fileDir) continue;
 					const editor = Editor.editMap.get(thisDir);
 					if (editor) {
-						build.push([editor.string(), thisDir]);
+						asm.push([editor.string(), thisDir]);
 					} else {
-						build.push([await thing.text(), thisDir]);
+						asm.push([await thing.text(), thisDir]);
 					}
 				}
-				const [ram, pc] = assemble(build);
-				emu = new Symstem(ram, this.console);
-				emu.pc = pc;
 			} else {
-				const [ram, pc] = assemble([[this.string(), this.fileDir || this.fileName]]);
-				emu = new Symstem(ram, this.console);
-				emu.pc = pc;
+				asm.push([this.string(), this.fileDir || this.fileName]);
 			}
+			const [ram, pc, instMap] = assemble(asm);
+			emu = new Symstem(ram, this.console);
+			emu.pc = pc;
 			emu.intRegis[2] = 0x7fffeffcn;
 			this.console.addMessage("\n" + I18n.finishedAssembly() + "\n\n");
-			this.dispatchEvent(new AssembleEvent("Assemble", emu));
+			this.dispatchEvent(new AssembleEvent("Assemble", {emu, instMap, asm}));
 		} catch (e) {
 			if (e instanceof AssemblError) {
 				this.dispatchEvent(new AssembleEvent("Assemble", e));
@@ -989,8 +1008,15 @@ class Editor extends EventTarget {
 	}
 }
 class AssembleEvent extends Event {
-	sys: Symstem | AssemblError;
-	constructor(code: string, sys: Symstem | AssemblError) {
+	sys:
+		| {emu: Symstem; instMap: Map<number, {file: string; line: number}>; asm: [string, string][]}
+		| AssemblError;
+	constructor(
+		code: string,
+		sys:
+			| {emu: Symstem; instMap: Map<number, {file: string; line: number}>; asm: [string, string][]}
+			| AssemblError,
+	) {
 		super(code);
 		this.sys = sys;
 	}

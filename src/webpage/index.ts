@@ -362,13 +362,35 @@ assemble.onclick = () => {
 
 const editButton = document.getElementById("EditButton") as HTMLButtonElement;
 const executeButton = document.getElementById("ExecuteButton") as HTMLButtonElement;
+let inEdit = true;
 editButton.onclick = () => {
+	inEdit = true;
 	editArea();
+	console.log(inEdit);
 };
 executeButton.onclick = () => {
-	if (system.isReady()) executeArea();
+	if (system.isReady()) {
+		executeArea();
+		inEdit = false;
+		console.log(inEdit);
+	}
 };
 let system = new Etab();
+system.onLine = (line) => {
+	for (const editor of editors) {
+		if (editor.fileDir === line?.file) {
+			editor.focusLine(line?.line);
+		} else {
+			editor.focusLine(undefined);
+		}
+	}
+	console.log(inEdit);
+	if (inEdit) {
+		const editor = editors.find((editor) => editor.fileDir === line?.file);
+		if (!editor) return;
+		buttons.get(editor)?.click();
+	}
+};
 
 const buttons = new Map<Editor, HTMLButtonElement>();
 const saved = new Map<Editor, boolean>();
@@ -439,9 +461,6 @@ async function editArea() {
 			});
 
 			button.addEventListener("click", () => {
-				if (focusedEditor !== editor) {
-					system.disable();
-				}
 				focusedEditor = editor;
 				if (selectedTab) {
 					selectedTab.classList.remove("selected");
@@ -677,6 +696,7 @@ async function openProject(proj: Project) {
 const consoleElm = document.getElementById("console") as HTMLDivElement;
 consoleElm.append(cons.makeHtml());
 function executeArea() {
+	inEdit = false;
 	area.innerHTML = "";
 
 	editButton.classList.remove("selected");
