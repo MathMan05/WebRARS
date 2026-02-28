@@ -28,6 +28,7 @@ body {
 	.tabStyle {
 		button {
 			background: #0d0d0d;
+			box-shadow: inset #000000 0px -2px 2px;
 		}
 		.selected {
 			box-shadow: none;
@@ -84,6 +85,9 @@ body {
 		tr:first-child {
 			background: #000000 !important;
 		}
+	}
+	.tabStyle {
+		box-shadow: inset #000000 0px -2px 2px;
 	}
 }
 .speedDiv {
