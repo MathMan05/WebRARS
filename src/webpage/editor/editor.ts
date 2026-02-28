@@ -87,7 +87,6 @@ class Editor extends EventTarget {
 		this.focusedLine = index;
 		const linedown = Math.floor(this.scroll.linedown);
 		if (index !== undefined) {
-			console.log(index, linedown, this.height);
 			if (index < linedown) {
 				this.scroll.linedown = index;
 			}

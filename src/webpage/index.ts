@@ -366,13 +366,11 @@ let inEdit = true;
 editButton.onclick = () => {
 	inEdit = true;
 	editArea();
-	console.log(inEdit);
 };
 executeButton.onclick = () => {
 	if (system.isReady()) {
 		executeArea();
 		inEdit = false;
-		console.log(inEdit);
 	}
 };
 let system = new Etab();
@@ -384,7 +382,6 @@ system.onLine = (line) => {
 			editor.focusLine(undefined);
 		}
 	}
-	console.log(inEdit);
 	if (inEdit) {
 		const editor = editors.find((editor) => editor.fileDir === line?.file);
 		if (!editor) return;
