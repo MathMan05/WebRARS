@@ -82,9 +82,14 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 		} else {
 			if (!file.endsWith(".ts")) {
 				if (file.endsWith(".html")) {
-					for (const [, match] of (await fs.readFile(path.join(curPath, file)))
+					for (let [, match] of (await fs.readFile(path.join(curPath, file)))
 						.toString()
 						.matchAll(/<script.*?src="(.*?)"/gm)) {
+						if (match.startsWith(".")) {
+							const temp = match.split(".");
+							temp.shift();
+							match = temp.join(".");
+						}
 						const sPathTemp = path.format({
 							root: path.join(__dirname, "src", "webpage"),
 							base: match,
