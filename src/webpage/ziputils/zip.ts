@@ -1,5 +1,5 @@
-import { I18n } from "../i18n";
-import { downloadBuffer } from "../utils/utils";
+import {I18n} from "../i18n";
+import {downloadBuffer} from "../utils/utils";
 
 const enum compMethod {
 	none = 0,
@@ -32,7 +32,7 @@ class ZipFile {
 	crc32: number;
 	compSize: number;
 	uncompSize: number;
-	flags:number;
+	flags: number;
 	private fileBuff: Uint8Array<ArrayBuffer>;
 	private nameBuf: Uint8Array<ArrayBuffer>;
 	private extraBuff: Uint8Array<ArrayBuffer>;
@@ -64,19 +64,19 @@ class ZipFile {
 	get isDir() {
 		return this.uncompSize === 0 && this.compSize === 0;
 	}
-	checkFile(file: Uint8Array) {
+	checkFile<X extends ArrayBufferLike>(file: Uint8Array<X>): Uint8Array<X> {
 		if (CRC32(file) !== this.crc32) throw new Error(I18n.zip.crcNoMatch(this.name));
 		return file;
 	}
-	async getFile() {
+	async getFile(): Promise<ArrayBuffer> {
 		if (this.isDir) {
 			throw new Error("Internal Error: Tried to access a directory");
 		}
 		if (this.uncompSize === 0 || this.compSize === 0) {
-			return new Uint8Array(0);
+			return new ArrayBuffer(0);
 		}
 		if (this.compMethod === compMethod.none) {
-			return this.checkFile(this.fileBuff);
+			return this.checkFile(this.fileBuff).buffer;
 		} else if (this.compMethod === compMethod.deflate) {
 			const decomp = new DecompressionStream("deflate-raw");
 			const buff = new Uint8Array(this.uncompSize);
@@ -91,7 +91,7 @@ class ZipFile {
 			await writer.write(this.fileBuff);
 			await writer.close();
 			await prom;
-			return this.checkFile(buff);
+			return this.checkFile(buff).buffer;
 		}
 		this.compMethod satisfies never;
 		throw new Error(I18n.zip.badCompMethod());
@@ -99,13 +99,13 @@ class ZipFile {
 	get name() {
 		return guessText(this.nameBuf);
 	}
-	get extra(){
+	get extra() {
 		return guessText(this.extraBuff);
 	}
 }
 function guessText(buff: Uint8Array) {
 	const newBuff = new Uint8Array([...buff]);
-	return new TextDecoder().decode(newBuff.buffer)||"";
+	return new TextDecoder().decode(newBuff.buffer) || "";
 }
 class CentDir {
 	verMade: number;
@@ -176,13 +176,13 @@ function breakPath(str: string) {
 		.filter((_) => _);
 	return names;
 }
-function combineBuffers(buffers:ArrayBufferLike[]){
-	const len = buffers.reduce((c,b)=>c+b.byteLength,0);
+function combineBuffers(buffers: ArrayBufferLike[]) {
+	const len = buffers.reduce((c, b) => c + b.byteLength, 0);
 	const buff = new Uint8Array(len);
 	let i = 0;
-	for(const b of buffers){
-		buff.set(new Uint8Array(b),i);
-		i+=b.byteLength
+	for (const b of buffers) {
+		buff.set(new Uint8Array(b), i);
+		i += b.byteLength;
 	}
 	return buff.buffer;
 }
@@ -249,12 +249,12 @@ export class Zip {
 		}
 		return undefined;
 	}
-	get comment(){
+	get comment() {
 		return guessText(this.commentBuf);
 	}
-	static async compress(buff:ArrayBuffer){
+	static async compress(buff: ArrayBuffer) {
 		const decomp = new CompressionStream("deflate-raw");
-		const ars :ArrayBufferLike[]=[] ;
+		const ars: ArrayBufferLike[] = [];
 		const prom = (async () => {
 			for await (const thing of decomp.readable) {
 				ars.push(thing.buffer);
@@ -266,7 +266,7 @@ export class Zip {
 		await prom;
 		return combineBuffers(ars);
 	}
-	static async zip(dir: FileSystemDirectoryHandle,baseDir=""): Promise<ArrayBuffer> {
+	static async zip(dir: FileSystemDirectoryHandle, baseDir = ""): Promise<ArrayBuffer> {
 		const files: Record<string, FileSystemFileHandle | undefined> = {};
 		async function getFiles(dir: FileSystemDirectoryHandle, soFar: string = baseDir) {
 			const entries = dir.entries();
@@ -278,7 +278,7 @@ export class Zip {
 				if (handle instanceof FileSystemFileHandle) {
 					files[place] = handle;
 				} else if (handle instanceof FileSystemDirectoryHandle) {
-					files[place+"/"] = undefined;
+					files[place + "/"] = undefined;
 					await getFiles(handle, place);
 				}
 			}
@@ -290,17 +290,16 @@ export class Zip {
 			buffs.push(buff);
 			i += buff.byteLength;
 		}
-		interface fileInfo{
-			entry:number,
-			crc:number,
-			mode:compMethod,
-			compSize:number,
-			realSize:number
-		};
+		interface fileInfo {
+			entry: number;
+			crc: number;
+			mode: compMethod;
+			compSize: number;
+			realSize: number;
+		}
 		const fileMap = new Map<string, fileInfo>();
 		for (const [name, handle] of Object.entries(files)) {
-
-			const entry = i ;
+			const entry = i;
 			const buff = new ArrayBuffer(30);
 			const descriptor = new DataView(buff);
 
@@ -308,63 +307,77 @@ export class Zip {
 
 			const file = await (await handle?.getFile())?.arrayBuffer();
 			descriptor.setInt32(0, 0x504b0304);
-			descriptor.setInt16(4,20,true);
-
+			descriptor.setInt16(4, 20, true);
 
 			const mode = handle ? compMethod.deflate : compMethod.none;
-			descriptor.setInt16(8, mode,true);
+			descriptor.setInt16(8, mode, true);
 			let crc = 0;
-			let compSize =0;
-			let realSize=0;
+			let compSize = 0;
+			let realSize = 0;
 			//TODO set last date/time
-			const comp = file && await this.compress(file);
+			const comp = file && (await this.compress(file));
 			if (file && comp) {
-				descriptor.setInt32(14, crc=CRC32(new Uint8Array(file)),true);
+				descriptor.setInt32(14, (crc = CRC32(new Uint8Array(file))), true);
 
-
-				descriptor.setInt32(18,compSize=comp.byteLength,true);
-				descriptor.setInt32(22,realSize=file.byteLength,true);
+				descriptor.setInt32(18, (compSize = comp.byteLength), true);
+				descriptor.setInt32(22, (realSize = file.byteLength), true);
 			}
-			descriptor.setInt32(26,nameBuff.length,true);
+			descriptor.setInt32(26, nameBuff.length, true);
 			addBuff(buff);
-			addBuff(nameBuff.buffer)
-			if(comp) addBuff(comp);
-			fileMap.set(name,{
+			addBuff(nameBuff.buffer);
+			if (comp) addBuff(comp);
+			fileMap.set(name, {
 				entry,
 				crc,
 				mode,
 				realSize,
-				compSize
-			})
+				compSize,
+			});
 		}
 		const startOfCDFH = i;
-		for(const [name, info] of fileMap){
+		for (const [name, info] of fileMap) {
 			const buff = new ArrayBuffer(46);
 			const descriptor = new DataView(buff);
-			descriptor.setInt32(0, 0x504B0102);
-			descriptor.setInt16(4,20,true);
-			descriptor.setInt16(6,20,true);
-			descriptor.setInt16(10,info.mode,true);
+			descriptor.setInt32(0, 0x504b0102);
+			descriptor.setInt16(4, 20, true);
+			descriptor.setInt16(6, 20, true);
+			descriptor.setInt16(10, info.mode, true);
 			//TODO deal with last modified stats
-			descriptor.setInt32(16,info.crc,true);
-			descriptor.setInt32(20,info.compSize,true);
-			descriptor.setInt32(24,info.realSize,true);
+			descriptor.setInt32(16, info.crc, true);
+			descriptor.setInt32(20, info.compSize, true);
+			descriptor.setInt32(24, info.realSize, true);
 			const nameBuff = new TextEncoder().encode(name);
-			descriptor.setInt32(28,nameBuff.length,true);
-			descriptor.setInt32(42,info.entry,true);
+			descriptor.setInt32(28, nameBuff.length, true);
+			descriptor.setInt32(42, info.entry, true);
 			addBuff(buff);
 			addBuff(nameBuff.buffer);
 		}
 		const buff = new ArrayBuffer(22);
 		const endOfFile = new DataView(buff);
-		endOfFile.setInt32(0,0x504B0506);
+		endOfFile.setInt32(0, 0x504b0506);
 		const entries = Object.keys(files).length;
-		endOfFile.setInt16(8,entries,true);
-		endOfFile.setInt16(10,entries,true);
-		endOfFile.setInt32(12,i-startOfCDFH,true);
-		endOfFile.setInt32(16,startOfCDFH,true);
+		endOfFile.setInt16(8, entries, true);
+		endOfFile.setInt16(10, entries, true);
+		endOfFile.setInt32(12, i - startOfCDFH, true);
+		endOfFile.setInt32(16, startOfCDFH, true);
 		addBuff(buff);
 		return combineBuffers(buffs);
+	}
+	async writeIntoDir(dir: FileSystemDirectoryHandle, fs = this.fileStructure) {
+		for (const [name, file] of Object.entries(fs)) {
+			if (file instanceof CentDir) {
+				const fileH = await dir.getFileHandle(name, {
+					create: true,
+				});
+				const write = await fileH.createWritable({keepExistingData: false});
+				write.write(await file.file.getFile());
+			} else {
+				const dirH = await dir.getDirectoryHandle(name, {
+					create: true,
+				});
+				await this.writeIntoDir(dirH, file);
+			}
+		}
 	}
 }
 const buff = await Zip.zip(await navigator.storage.getDirectory());
@@ -374,14 +387,12 @@ console.log(dir.toString());
 const cont = await dir.getFile("projects/test4/main.asm");
 if (cont) {
 	console.log(cont);
-	console.log(guessText(cont));
+	console.log(guessText(new Uint8Array(cont)));
 }
-downloadBuffer(buff,"zip.zip")
+downloadBuffer(buff, "zip.zip");
 
 fetch("./ziputils/tetris.zip").then(async (res) => {
 	const buff = await res.arrayBuffer();
 	const dir = new Zip(buff);
 	console.log(dir);
-
 });
-
