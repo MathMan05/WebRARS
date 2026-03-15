@@ -195,7 +195,7 @@ export class Zip {
 	constructor(buff: ArrayBuffer) {
 		const view = new DataView(buff);
 		const start = this.findStart(view);
-		this.records = view.getInt16(start + 8, true);
+		this.records = view.getUint16(start + 8, true);
 
 		const comLen = view.getInt16(start + 20, true);
 		this.commentBuf = new Uint8Array(buff, start + 22, comLen);
