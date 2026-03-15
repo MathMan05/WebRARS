@@ -380,21 +380,3 @@ export class Zip {
 		}
 	}
 }
-/*
-const buff = await Zip.zip(await navigator.storage.getDirectory());
-const dir = new Zip(buff);
-console.log(dir, buff);
-console.log(dir.toString());
-const cont = await dir.getFile("projects/test4/main.asm");
-if (cont) {
-	console.log(cont);
-	console.log(guessText(new Uint8Array(cont)));
-}
-downloadBuffer(buff, "zip.zip");
-
-fetch("./ziputils/tetris.zip").then(async (res) => {
-	const buff = await res.arrayBuffer();
-	const dir = new Zip(buff);
-	console.log(dir);
-});
-*/
