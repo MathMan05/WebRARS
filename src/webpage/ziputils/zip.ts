@@ -1,5 +1,4 @@
 import {I18n} from "../i18n";
-import {downloadBuffer} from "../utils/utils";
 
 const enum compMethod {
 	none = 0,
@@ -107,7 +106,7 @@ function guessText(buff: Uint8Array) {
 	const newBuff = new Uint8Array([...buff]);
 	return new TextDecoder().decode(newBuff.buffer) || "";
 }
-class CentDir {
+export class CentDir {
 	verMade: number;
 	verExt: number;
 	flags: number;
@@ -371,6 +370,7 @@ export class Zip {
 				});
 				const write = await fileH.createWritable({keepExistingData: false});
 				write.write(await file.file.getFile());
+				await write.close();
 			} else {
 				const dirH = await dir.getDirectoryHandle(name, {
 					create: true,

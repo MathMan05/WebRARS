@@ -1,4 +1,5 @@
-import {Directory} from "../utils/utils.js";
+import {Directory, downloadBuffer} from "../utils/utils.js";
+import {Zip} from "../ziputils/zip.js";
 
 class Project {
 	name: string;
@@ -116,6 +117,14 @@ main:
 		} else {
 			console.error("internal error, please fix me sometime :P");
 		}
+	}
+	async deleteProject() {
+		const home = await Directory.home;
+		await home.handle.removeEntry(this.name, {recursive: true});
+	}
+	async downloadProject() {
+		const buff = await Zip.zip(this.dir.handle);
+		downloadBuffer(buff, this.name + ".zip");
 	}
 }
 export {Project};

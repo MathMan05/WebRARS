@@ -78,6 +78,20 @@ class Directory {
 		return new Directory(await this.handle.getDirectoryHandle(name, {create: true}));
 	}
 }
+export function getUserUpload(mimeType = "") {
+	return new Promise<null | File>((res) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = mimeType;
+		input.multiple = false;
+		input.onchange = () => {
+			if (input.files) {
+				res(input.files.item(0));
+			}
+		};
+		input.click();
+	});
+}
 export function downloadBuffer(buff: ArrayBuffer, name: string) {
 	const blob = new Blob([buff], {type: "text/plain"});
 	const objectURL = URL.createObjectURL(blob);

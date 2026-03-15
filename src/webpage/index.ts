@@ -7,7 +7,9 @@ import {instructions} from "./fetches.js";
 import {I18n} from "./i18n.js";
 import {Project} from "./projects/project.js";
 import {ProjFiles} from "./projects/projectFiles.js";
+import {getUserUpload} from "./utils/utils.js";
 import "./ziputils/zip.js";
+import {CentDir, Zip} from "./ziputils/zip.js";
 const actionRow = document.getElementById("actionRow");
 if (!actionRow) throw Error("action row not in document");
 const cons = new Console();
@@ -32,12 +34,14 @@ fileMenu.addButton(
 		focusedEditor.save();
 	},
 );
+
 fileMenu.addButton(
 	() => I18n.file.saveAll(),
 	() => {
 		editors.map((_) => _.save());
 	},
 );
+
 fileMenu.addButton(
 	() => I18n.file.saveAs(),
 	() => {
@@ -79,6 +83,57 @@ const fileButton = document.createElement("button");
 fileButton.textContent = I18n.file.file();
 actionRow.append(fileButton);
 fileMenu.bindContextmenu(fileButton, undefined, undefined, true);
+
+const projectMenu = new Contextmenu("Project");
+projectMenu.addButton(
+	() => I18n.file.download(),
+	() => {
+		projFile?.pro.downloadProject();
+	},
+	{
+		visable: () => !!projFile,
+	},
+);
+projectMenu.addButton(
+	() => I18n.file.deleteProject(),
+	async () => {
+		if (curProject) {
+			if (!confirm(I18n.confirmDeleteProject(curProject.name))) {
+				return;
+			}
+
+			await curProject.deleteProject();
+			openProject(undefined);
+		}
+	},
+	{
+		visable: () => !!projFile,
+	},
+);
+projectMenu.addButton(
+	() => I18n.file.import(),
+	async () => {
+		const user = await getUserUpload("application/zip");
+		if (!user) return;
+		const zip = new Zip(await user.arrayBuffer());
+		let fs = zip.fileStructure;
+		let entries = Object.entries(fs);
+		let name = user.name.split(".")[0];
+		while (entries.length === 1 && !(entries[0][1] instanceof CentDir)) {
+			fs = entries[0][1];
+			name = entries[0][0];
+			entries = Object.entries(fs);
+		}
+		const project = await Project.new(name);
+		await zip.writeIntoDir(project.dir.handle, fs);
+		openProject(project);
+	},
+);
+
+const projectButton = document.createElement("button");
+projectButton.textContent = I18n.file.project();
+actionRow.append(projectButton);
+projectMenu.bindContextmenu(projectButton, undefined, undefined, true);
 
 const menu = new Contextmenu("run");
 
@@ -656,8 +711,16 @@ function downloadEditor(editor: Editor) {
 }
 let curProject: Project | undefined;
 let projFile: ProjFiles | undefined;
-async function openProject(proj: Project) {
+async function openProject(proj?: Project) {
+	if (!proj) {
+		curProject = undefined;
+		projFile = undefined;
+		editors = [];
+		editArea();
+		return;
+	}
 	curProject = proj;
+
 	projFile = new ProjFiles(proj);
 	projFile.addEventListener("open", async (e) => {
 		const editor = Editor.editMap.get(`${proj.name}:${e.fileName}`);

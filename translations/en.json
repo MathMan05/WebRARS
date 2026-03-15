@@ -98,6 +98,7 @@
 	"startProject": "Start a new project",
 	"openFile": "Open a file!",
 	"confirmDelete": "Are you sure you want to delete $1?",
+	"confirmDeleteProject":"Are you sure you want to delete $1? (this deletes all files in the project)",
 	"memPlaces":{
 		"data":"$1 (.data)",
 		"text":"$1 (.text)",
@@ -120,12 +121,16 @@
 	"unsaved": "There are unsaved changes, are you sure you want to close this file?",
 	"file": {
 		"file": "File",
+		"project":"Project",
 		"open": "Open",
 		"new": "New",
 		"save": "Save file",
 		"saveAs": "Save file as",
 		"saveAll": "Save All",
-		"delete": "Delete File"
+		"delete": "Delete File",
+		"download":"Download Project",
+		"deleteProject":"Delete Project",
+		"import":"Import Project"
 	},
 	"submit": "Submit",
 	"instructions":{
