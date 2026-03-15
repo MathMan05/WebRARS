@@ -380,6 +380,7 @@ export class Zip {
 		}
 	}
 }
+/*
 const buff = await Zip.zip(await navigator.storage.getDirectory());
 const dir = new Zip(buff);
 console.log(dir, buff);
@@ -396,3 +397,4 @@ fetch("./ziputils/tetris.zip").then(async (res) => {
 	const dir = new Zip(buff);
 	console.log(dir);
 });
+*/
