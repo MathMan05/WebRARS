@@ -103,6 +103,11 @@
 		"text":"$1 (.text)",
 		"stack":"$1 (stack)"
 	},
+	"zip":{
+		"crcNoMatch":"Zip file is likely corrupted, can not extract $1",
+		"badCompMethod":"Compression Method of zip is unsupported",
+		"invalidZip":"Invalid zip file"
+	},
 	"speed":"Run speed $1 inst/sec",
 	"speedMax":"Run at max speed",
 	"project": {

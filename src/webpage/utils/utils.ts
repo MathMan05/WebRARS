@@ -78,5 +78,16 @@ class Directory {
 		return new Directory(await this.handle.getDirectoryHandle(name, {create: true}));
 	}
 }
-
+export function downloadBuffer(buff: ArrayBuffer, name: string) {
+	const blob = new Blob([buff], {type: "text/plain"});
+	const objectURL = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.style.display = "none";
+	document.body.appendChild(link);
+	link.href = objectURL;
+	link.href = URL.createObjectURL(blob);
+	link.download = name;
+	link.click();
+	link.remove();
+}
 export {Directory};

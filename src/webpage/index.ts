@@ -7,6 +7,7 @@ import {instructions} from "./fetches.js";
 import {I18n} from "./i18n.js";
 import {Project} from "./projects/project.js";
 import {ProjFiles} from "./projects/projectFiles.js";
+import "./ziputils/zip.js";
 const actionRow = document.getElementById("actionRow");
 if (!actionRow) throw Error("action row not in document");
 const cons = new Console();
