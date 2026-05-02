@@ -418,7 +418,7 @@ function assemble(files: [string, string][]) {
 				}
 				function handleDirrective(data: {type: "directive"; content: string}) {
 					switch (data.content) {
-						case "align":
+						case "align": {
 							const num = getNextSymbol();
 							if (num?.type !== "int" || num.content < 0n || num.content > 1n << 15n) {
 								throw new AssemblError(I18n.errors.alignRequiresInt(i + 1 + ""), i, file);
@@ -426,6 +426,15 @@ function assemble(files: [string, string][]) {
 							const pow = 1 << Number(num.content);
 							dataIndex += pow - (dataIndex % pow);
 							break;
+						}
+						case "space": {
+							const num = getNextSymbol();
+							if (num?.type !== "int" || num.content < 0n || num.content > 1n << 15n) {
+								throw new AssemblError(I18n.errors.spaceRequiresInt(i + 1 + ""), i, file);
+							}
+							dataIndex += Number(num.content);
+							break;
+						}
 						case "data":
 							place = "data";
 							break;
