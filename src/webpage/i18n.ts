@@ -24,7 +24,7 @@ class I18n {
 			}
 		}
 
-		const json = (await (await fetch("/translations/" + lang + ".json")).json()) as translation;
+		const json = (await (await fetch("./translations/" + lang + ".json")).json()) as translation;
 		const translations: translation[] = [];
 		translations.push(json);
 		if (lang !== "en") {
