@@ -28,7 +28,7 @@ class I18n {
 		const translations: translation[] = [];
 		translations.push(json);
 		if (lang !== "en") {
-			translations.push((await (await fetch("/translations/en.json")).json()) as translation);
+			translations.push((await (await fetch("./translations/en.json")).json()) as translation);
 		}
 		const en = translations.find(
 			(_) => (_["@metadata"] as translation)?.locale === "en",
