@@ -314,6 +314,55 @@ helpMenu.addButton(
 				heightLimitTable.append(insts);
 			};
 
+			const systemCalls = document.createElement("button");
+			riscvButtons.append(systemCalls);
+			systemCalls.textContent = I18n.systemCalls.calls();
+			systemCalls.onclick = () => {
+				riscvBody.innerHTML = "";
+				lastSelectedInst.classList.remove("selected");
+				lastSelectedInst = systemCalls;
+				systemCalls.classList.add("selected");
+				const insts = document.createElement("table");
+				const heightLimitTable = document.createElement("div");
+				heightLimitTable.classList.add("heightLimitTable");
+
+				const tr = document.createElement("tr");
+				const numbertd = document.createElement("td");
+				const nametd = document.createElement("td");
+				nametd.textContent = I18n.systemCalls.title.name();
+				const desctd = document.createElement("td");
+				const inputstd = document.createElement("td");
+				inputstd.textContent = I18n.systemCalls.title.inputs();
+				const outputstd = document.createElement("td");
+				outputstd.textContent = I18n.systemCalls.title.outputs();
+				numbertd.textContent = I18n.systemCalls.title.number();
+				desctd.textContent = I18n.systemCalls.title.desc();
+				tr.append(nametd, numbertd, desctd, inputstd, outputstd);
+				insts.append(tr);
+
+				const instList = Object.entries(I18n.systemCalls.callList);
+				for (const [number, {name, desc, inputs, outputs}] of instList as [
+					string,
+					{name: () => string; desc: () => string; inputs?: () => string; outputs?: () => string},
+				][]) {
+					const tr = document.createElement("tr");
+					const numbertd = document.createElement("td");
+					const nametd = document.createElement("td");
+					nametd.textContent = name();
+					const desctd = document.createElement("td");
+					const inputstd = document.createElement("td");
+					inputstd.textContent = (inputs || I18n.systemCalls.na)();
+					const outputstd = document.createElement("td");
+					outputstd.textContent = (outputs || I18n.systemCalls.na)();
+					numbertd.textContent = number;
+					desctd.textContent = desc();
+					tr.append(nametd, numbertd, desctd, inputstd, outputstd);
+					insts.append(tr);
+				}
+				riscvBody.append(heightLimitTable);
+				heightLimitTable.append(insts);
+			};
+
 			inst.click();
 
 			body.append(riscvButtons, riscvBody);

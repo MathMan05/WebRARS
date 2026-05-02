@@ -22,6 +22,38 @@
 		"basicInstructions":"Basic Instructions",
 		"extInstructions":"Extended Instructions"
 	},
+	"systemCalls":{
+		"calls":"System Calls",
+		"na":"N/A",
+		"callList":{
+			"1":{
+				"name":"PrintInt",
+				"desc":"Print an Integer",
+				"inputs":"a0 = int to print"
+			},
+			"4":{
+				"name":"PrintString",
+				"desc":"Prints a null terminated string to the console",
+				"inputs":"a0 = address of the string"
+			},
+			"10":{
+				"name":"Exit",
+				"desc":"Exits program with code 0"
+			},
+			"11":{
+				"name":"PrintChar",
+				"desc":"Prints an ascii character",
+				"inputs":"a0 = charter to be printed (only lowest byte is considered)"
+			}
+		},
+		"title":{
+			"name":"Name",
+			"number":"Number",
+			"desc":"Description",
+			"inputs":"Inputs",
+			"outputs":"Outputs"
+		}
+	},
 	"run": {
 		"run": "Run",
 		"step": "Step",
