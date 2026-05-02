@@ -424,6 +424,12 @@ function assemble(files: [string, string][]) {
 						case "text":
 							place = "text";
 							break;
+						case "string":
+							if (place === "text") {
+								throw new AssemblError(I18n.errors.dataDirectiveInText(i + 1 + ""), i, file);
+							}
+							directive = "asciz";
+							break;
 						case "ascii":
 						case "asciz":
 						case "double":
