@@ -410,7 +410,7 @@ class Etab {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "dontgrow");
 		const scrollTable = document.createElement("div");
-		scrollTable.classList.add("scrollTable");
+		scrollTable.classList.add("scrollTable", "asmView");
 		const table = document.createElement("table");
 		scrollTable.append(table);
 		div.append(scrollTable);
