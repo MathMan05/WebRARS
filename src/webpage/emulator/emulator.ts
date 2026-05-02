@@ -175,6 +175,10 @@ class Symstem {
 					console.log("done");
 					break;
 				}
+				case 93n:
+					this.done = true;
+					this.console.addIO("\n" + I18n.programDone(this.intRegis[10] + "") + "\n\n");
+					return false;
 				default:
 					throw new runTimeError(
 						I18n.runTimeErrors.unknownSysCall("0x" + this.intRegis[17].toString(16)),

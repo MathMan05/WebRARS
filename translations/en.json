@@ -54,6 +54,11 @@
 				"name":"Sleep",
 				"desc":"Set the current thread to sleep for a time (not precise)",
 				"inputs":"a0 = milliseconds to sleep"
+			},
+			"93":{
+				"name":"Exit2",
+				"desc":"Exits program with a code",
+				"inputs":"a0 = the number to exit with"
 			}
 		},
 		"title":{
