@@ -44,6 +44,11 @@
 				"name":"PrintChar",
 				"desc":"Prints an ascii character",
 				"inputs":"a0 = charter to be printed (only lowest byte is considered)"
+			},
+			"30":{
+				"name":"Time",
+				"desc":"Get current time (milliseconds since 1st of Jan 1970)",
+				"outputs":"a0 = lower 32 bits\na1 = higher 32 bits"
 			}
 		},
 		"title":{

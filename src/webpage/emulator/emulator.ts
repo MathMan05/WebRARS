@@ -163,6 +163,12 @@ class Symstem {
 						new TextDecoder().decode(new Uint8Array([Number(this.intRegis[10] & 0xffffn)])),
 					);
 					break;
+				case 30n: {
+					const time = Date.now();
+					this.intRegis[10] = BigInt(time >> 0);
+					this.intRegis[11] = BigInt(time) >> 32n;
+					break;
+				}
 				default:
 					throw new runTimeError(
 						I18n.runTimeErrors.unknownSysCall("0x" + this.intRegis[17].toString(16)),
