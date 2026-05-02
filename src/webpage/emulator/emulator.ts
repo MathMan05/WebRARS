@@ -169,6 +169,12 @@ class Symstem {
 					this.intRegis[11] = BigInt(time) >> 32n;
 					break;
 				}
+				case 32n: {
+					console.log("eep:" + this.intRegis[10]);
+					await new Promise((res) => setTimeout(res, Number(this.intRegis[10])));
+					console.log("done");
+					break;
+				}
 				default:
 					throw new runTimeError(
 						I18n.runTimeErrors.unknownSysCall("0x" + this.intRegis[17].toString(16)),

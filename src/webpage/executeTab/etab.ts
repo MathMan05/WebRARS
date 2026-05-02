@@ -311,7 +311,6 @@ class Etab {
 					do {
 						if (this.wait) {
 							await this.step(true);
-							console.log("waitStep");
 							await this.waitStep();
 						} else {
 							this.onLine(undefined);
@@ -348,6 +347,7 @@ class Etab {
 	}
 	async step(effectStopped = false) {
 		if (this.running) return await this.running;
+
 		this.running = new Promise<void>(async (res) => {
 			try {
 				if (this.sys) {
@@ -382,7 +382,7 @@ class Etab {
 				}
 				this.changeButtonStates();
 				this.running = undefined;
-			} catch (e) {
+			} finally {
 				res();
 			}
 		});

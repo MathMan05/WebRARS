@@ -49,6 +49,11 @@
 				"name":"Time",
 				"desc":"Get current time (milliseconds since 1st of Jan 1970)",
 				"outputs":"a0 = lower 32 bits\na1 = higher 32 bits"
+			},
+			"32":{
+				"name":"Sleep",
+				"desc":"Set the current thread to sleep for a time (not precise)",
+				"inputs":"a0 = milliseconds to sleep"
 			}
 		},
 		"title":{
