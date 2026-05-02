@@ -394,7 +394,7 @@ class Etab {
 			if (file === line.file) {
 				return (
 					(this.asm.length === 1 ? "" : line.file.replace(/.*:\//m, "") + ", ") +
-					line.line +
+					(line.line + 1) +
 					": " +
 					contents.split("\n")[line.line]
 				);
